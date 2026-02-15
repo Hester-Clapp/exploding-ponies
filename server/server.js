@@ -9,23 +9,18 @@ const roomHandler = new RoomHandler(userHandler);
 async function handle(req) {
     const url = new URL(req.url);
     const { pathname, searchParams } = url;
-    const path = pathname.split("/").filter(Boolean);
 
     if (req.method === "POST" && pathname === "/play") {
-        console.log(`Received play request from ${searchParams.get("username")}`);
         const uuid = userHandler.add(searchParams);
         return json({ uuid }, 201);
     }
 
     if (req.method === "DELETE" && pathname === "/play") {
-        const uuid = searchParams.get("uuid")
-        console.log(`Received leave request from ${uuid}`);
-        userHandler.remove(uuid);
-        return json({ uuid }, 200);
+        userHandler.remove(searchParams.get("uuid"));
+        return json({ uuid });
     }
 
     if (req.method === "POST" && pathname === "/rooms") {
-        console.log("Received request to create room");
         const roomId = roomHandler.createRoom();
         return json({ roomId }, 201);
     }
@@ -38,24 +33,19 @@ async function handle(req) {
 
     if (pathname === "/join" && req.headers.get("upgrade") === "websocket") {
         console.log("Received request to join room");
+        const { socket, response } = Deno.upgradeWebSocket(req);
         const roomId = searchParams.get("roomId");
         const uuid = searchParams.get("uuid");
 
-        const { socket, response } = Deno.upgradeWebSocket(req);
-
         if (!roomId) return socket.close(1000, "Missing roomId");
         if (!uuid) return socket.close(1000, "Missing uuid");
-
-        if (!userHandler.get(uuid)) socket.close(1000, "Unknown uuid");
+        if (!userHandler.get(uuid)) return socket.close(1000, "Unknown uuid");
 
         const room = roomHandler.getRoom(roomId);
         if (!room) return socket.close(1000, "Room not found");
-
         if (room.isFull) return socket.close(1000, "Room is full");
 
-        console.log(req.url)
         room.openSocket(socket, uuid);
-
         return response;
     }
 
