@@ -1,0 +1,22 @@
+<form>
+    <div>
+        <label for="numPlayers">Players:</label>
+        <input type="range" id="numPlayers" min="1" max="5" step="1" value="4"
+            oninput="this.nextElementSibling.value = this.value">
+        <output>4</output>
+    </div>
+    <div>
+        <label for="numBots">Bots:</label>
+        <input type="range" id="numBots" min="0" max="5" step="1" value="0"
+            oninput="this.nextElementSibling.value = this.value">
+        <output>0</output>
+    </div>
+    <div>
+        <label for="decks">Decks:</label>
+        <input type="range" id="decks" min="1" max="2" step="1" value="1"
+            oninput="this.nextElementSibling.value = this.value">
+        <output>1</output>
+    </div>
+    <input type="submit" value="Save">
+</form>
+<button id="start">Start!</button>
