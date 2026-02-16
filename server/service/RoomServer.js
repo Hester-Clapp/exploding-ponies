@@ -1,10 +1,12 @@
 import { SocketMessage } from "../../public/common/SocketMessage.js"
+import { GameServer } from "./GameServer.js"
 
 export class RoomServer {
 
     constructor(roomId, userHandler) {
         this.roomId = roomId;
         this.userHandler = userHandler;
+        this.gameServer = null;
 
         this.sockets = new Map();
         this.hostQueue = []
@@ -86,8 +88,11 @@ export class RoomServer {
 
     onMessage(event) {
         const { sender, type, payload } = SocketMessage.fromEvent(event);
-        if (type === "kick") this.kick(payload.uuid, sender)
-        else this.publish(type, payload);
+        if (type === "kick") return this.kick(payload.uuid, sender)
+
+        this.publish(type, payload);
+
+        if (type === "start") this.start()
     }
 
     onClose(ws) {
@@ -118,6 +123,12 @@ export class RoomServer {
     kick(uuid, sender) {
         const target = this.sockets.get(uuid)
         this.send(target, "kick", { message: `You were kicked from room ${this.roomId}` }, sender)
+    }
+
+    start() {
+        const gameServer = new GameServer(this.getPlayers(), this.sockets, this.decks);
+        gameServer.deal();
+        gameServer.advanceTurn();
     }
 
     send(socket, type, payload, sender = socket.id) {

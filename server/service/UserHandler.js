@@ -1,5 +1,3 @@
-import { User } from "../../public/common/User.js";
-
 export class UserHandler {
 
     constructor() {
@@ -35,5 +33,19 @@ export class UserHandler {
 
     remove(uuid) {
         this.users.delete(uuid);
+    }
+}
+
+class User {
+    constructor(uuid, username) {
+        this.uuid = uuid;
+        this.username = username;
+    }
+
+    expose() {
+        return {
+            uuid: this.uuid,
+            username: this.username
+        }
     }
 }

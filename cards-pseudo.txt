@@ -1,0 +1,51 @@
+attack:
+wait for nope
+advance turn
+increase draws by 1
+
+cat:
+wait for nope
+choose target
+choose card
+take card from target
+add card to hand
+
+defuse:
+set alive to false
+
+exploding:
+set alive to true
+
+favor:
+wait for nope
+choose target
+target chooses card
+take card from target
+add card to hand
+
+future:
+wait for nope
+peek at deck
+
+nope:
+wait for yup
+undo/cancel action
+
+shuffle:
+wait for nope
+shuffle deck
+
+skip:
+wait for nope
+advance turn
+
+
+primitive actions:
+advance turn
+increment draws
+choose a target
+choose a card
+take card
+see the future
+shuffle
+set alive

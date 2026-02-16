@@ -9,6 +9,7 @@ export class RoomController {
             drawPlayerList: this.drawPlayerList.bind(this),
             promote: this.promote.bind(this),
             leaveRoom: this.leaveRoom.bind(this),
+            startGame: this.startGame.bind(this),
         }
 
         this.eventHandlers = {
@@ -16,7 +17,8 @@ export class RoomController {
             join: this.bound.drawPlayerList,
             leave: this.bound.drawPlayerList,
             promote: this.bound.promote,
-            beforeunload: this.bound.leaveRoom
+            beforeunload: this.bound.leaveRoom,
+            start: this.bound.startGame,
         }
 
         state.leaveRoom = this.bound.leaveRoom
@@ -38,7 +40,6 @@ export class RoomController {
 
     async leaveRoom() {
         await this.state.roomClient.leaveRoom()
-        delete this.state.roomId
         delete this.state.leaveRoom
         this.isHost = false;
 
@@ -46,7 +47,7 @@ export class RoomController {
             window.removeEventListener(event, this.eventHandlers[event])
         }
 
-        loadPage("rooms", this.state.uuid);
+        loadPage("rooms");
     }
 
     drawPlayerList() {
@@ -73,11 +74,10 @@ export class RoomController {
     async promote() {
         this.isHost = true;
 
-        const controls = await fetch("../../resources/host.html").then(res => res.text())
+        const controls = await fetch("../../resources/pages/host.html").then(res => res.text())
         document.getElementById("hostControls").innerHTML = controls
 
-        const form = document.querySelector("form");
-        form.addEventListener("submit", async (e) => {
+        document.querySelector("form").addEventListener("submit", async (e) => {
             e.preventDefault();
             const fields = {
                 numPlayers: document.getElementById("numPlayers"),
@@ -93,5 +93,13 @@ export class RoomController {
                 fields[name].nextElementSibling.textContent = actual[name]
             }
         });
+
+        document.getElementById("start").addEventListener("click", async (e) => {
+            this.state.roomClient.startGame()
+        })
+    }
+
+    startGame() {
+        loadPage("game")
     }
 }

@@ -39,6 +39,7 @@ export class RoomClient {
 
         delete this.state.socket
         delete this.state.roomId
+        delete this.state.gameClient
         this.state.players.clear()
     }
 
@@ -85,8 +86,11 @@ export class RoomClient {
         this.state.players.delete(user.uuid);
     }
 
+    startGame() {
+        this.send("start", {})
+    }
+
     send(type, payload) {
-        if (!this.state.socketIsOpen()) throw new Error("WebSocket not initialized");
         const message = new SocketMessage(this.state.uuid, type, payload);
         this.state.socket.send(message.toString());
     }
