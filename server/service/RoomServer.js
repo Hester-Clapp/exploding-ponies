@@ -85,8 +85,9 @@ export class RoomServer {
     }
 
     onMessage(event) {
-        const { type, payload } = SocketMessage.fromEvent(event);
-        this.publish(type, payload);
+        const { sender, type, payload } = SocketMessage.fromEvent(event);
+        if (type === "kick") this.kick(payload.uuid, sender)
+        else this.publish(type, payload);
     }
 
     onClose(ws) {
@@ -114,8 +115,13 @@ export class RoomServer {
         }
     }
 
-    send(socket, type, payload) {
-        new SocketMessage(socket.id, type, payload).send(socket);
+    kick(uuid, sender) {
+        const target = this.sockets.get(uuid)
+        this.send(target, "kick", { message: `You were kicked from room ${this.roomId}` }, sender)
+    }
+
+    send(socket, type, payload, sender = socket.id) {
+        new SocketMessage(sender, type, payload).send(socket);
     }
 
     publish(type, payload, sender = null) {

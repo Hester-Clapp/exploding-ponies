@@ -3,6 +3,7 @@ import { loadPage } from './pageLoader.js';
 export class RoomController {
     constructor(state) {
         this.state = state
+        this.isHost = false
 
         this.bound = {
             drawPlayerList: this.drawPlayerList.bind(this),
@@ -17,6 +18,8 @@ export class RoomController {
             promote: this.bound.promote,
             beforeunload: this.bound.leaveRoom
         }
+
+        state.leaveRoom = this.bound.leaveRoom
     }
 
     async beforeLoad() {
@@ -36,6 +39,8 @@ export class RoomController {
     async leaveRoom() {
         await this.state.roomClient.leaveRoom()
         delete this.state.roomId
+        delete this.state.leaveRoom
+        this.isHost = false;
 
         for (const event in this.eventHandlers) {
             window.removeEventListener(event, this.eventHandlers[event])
@@ -48,14 +53,26 @@ export class RoomController {
         const playerList = document.getElementById("playerList");
         playerList.innerHTML = "";
 
-        for (const username of this.state.players.values()) {
+        for (const uuid of this.state.players.keys()) {
+            const username = this.state.players.get(uuid)
+
             const li = document.createElement("li");
             li.textContent = username;
+
+            const kick = document.createElement("button");
+            kick.textContent = "Kick";
+            kick.addEventListener("click", async () => {
+                await this.state.roomClient.kickPlayer(uuid);
+            });
+
+            if (this.isHost && uuid !== this.state.uuid) li.appendChild(kick);
             playerList.appendChild(li);
         }
     }
 
     async promote() {
+        this.isHost = true;
+
         const controls = await fetch("../../resources/host.html").then(res => res.text())
         document.getElementById("hostControls").innerHTML = controls
 

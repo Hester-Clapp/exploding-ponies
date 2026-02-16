@@ -42,6 +42,10 @@ export class RoomClient {
         this.state.players.clear()
     }
 
+    kickPlayer(uuid) {
+        new SocketMessage(this.state.uuid, "kick", { uuid }).send(this.state.socket)
+    }
+
     onMessage(event) {
         const { type, payload } = SocketMessage.fromEvent(event);
         switch (type) {
@@ -53,6 +57,10 @@ export class RoomClient {
                 break
             case "leave":
                 this.playerLeave(payload);
+                break
+            case "kick":
+                alert(payload.message)
+                this.state.leaveRoom();
                 break
         }
         window.dispatchEvent(new CustomEvent(type, { detail: payload }));
