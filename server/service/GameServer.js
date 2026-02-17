@@ -1,5 +1,5 @@
 import { SocketMessage } from '../../public/common/SocketMessage.js'
-import { Deck } from '../game/Deck.js'
+import { Deck } from '../../public/common/Deck.js'
 import { Player } from '../../public/common/Player.js'
 
 export class GameServer {
@@ -40,21 +40,9 @@ export class GameServer {
         }
     }
 
-    discard(card) {
-        this.deck.discard(card)
-    }
-
     advanceTurn() {
         this.currentPlayerId = this.players.get(this.currentPlayerId).nextPlayerId
         this.publish("nextturn", this.currentPlayerId)
-    }
-
-    seeFuture() {
-        return this.deck.seeFuture()
-    }
-
-    shuffle() {
-        this.deck.shuffle()
     }
 
     send(socket, type, payload, sender = socket.id) {

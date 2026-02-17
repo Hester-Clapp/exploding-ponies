@@ -1,10 +1,15 @@
-import { AttackCard, CatCard, DefuseCard, ExplodingCard, FavorCard, FutureCard, NopeCard, ShuffleCard, SkipCard } from "../../public/common/Card.js"
+import { Card, AttackCard, CatCard, DefuseCard, ExplodingCard, FavorCard, FutureCard, NopeCard, ShuffleCard, SkipCard } from "./Card.js"
 
 export class Deck {
     constructor(numDecks = 1) {
         this.numDecks = numDecks
-        this.cards = []
-        this.lastPlayed = null
+        this.drawPile = []
+        this.discardPile = []
+    }
+
+    static fromData(data) {
+        const deck = new Deck(data.numDecks)
+        deck.drawPile = data.drawPile.map(Card.fromData)
     }
 
     deal(hands) {
@@ -35,35 +40,35 @@ export class Deck {
     add(Card, number, ...args) {
         for (let deck = 1; deck <= this.numDecks; deck++) {
             for (let i = 1; i <= number; i++) {
-                this.cards.push(new Card(i, ...args))
+                this.drawPile.push(new Card(i, ...args))
             }
         }
     }
 
     draw() {
-        return this.cards.pop()
+        return this.drawPile.pop()
     }
 
     discard(card) {
-        this.lastPlayed = card
+        this.discardPile.push(card)
     }
 
     shuffle() {
-        // for (let i = 0; i < this.cards.length; i++) {
-        //     const j = Math.floor(Math.random() * this.cards.length)
-        //     const temp = this.cards[i]
-        //     this.cards[i] = this.cards[j]
-        //     this.cards[j] = temp
+        // for (let i = 0; i < this.drawPile.length; i++) {
+        //     const j = Math.floor(Math.random() * this.drawPile.length)
+        //     const temp = this.drawPile[i]
+        //     this.drawPile[i] = this.drawPile[j]
+        //     this.drawPile[j] = temp
         // }
 
 
-        for (let i = this.cards.length - 1; i > 0; i--) {
+        for (let i = this.drawPile.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
-            [this.cards[i], this.cards[j]] = [this.cards[j], this.cards[i]];
+            [this.drawPile[i], this.drawPile[j]] = [this.drawPile[j], this.drawPile[i]];
         }
     }
 
     seeFuture() {
-        return this.cards.slice(-3)
+        return this.drawPile.slice(-3)
     }
 }

@@ -1,5 +1,6 @@
 import { Player } from '../../common/Player.js';
 import { Card } from '../../common/Card.js';
+import { GameContext } from '../../common/GameContext.js';
 
 export class GameClient {
     constructor(state) {
@@ -13,7 +14,6 @@ export class GameClient {
         this.hand = this.self.hand
 
         this.isMyTurn = false
-        this.draws = 1
 
         this.bound = {
             deal: this.initialiseHand.bind(this),

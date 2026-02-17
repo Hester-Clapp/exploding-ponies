@@ -43,10 +43,10 @@ export class Card {
 
     toHTML() {
         const div = document.createElement("div")
+        div.classList.add("card")
 
         const img = document.createElement("img")
         img.src = "resources/images/" + this.cardType + ".png"
-        img.classList.add("card")
         img.alt = this.cardType
         div.appendChild(img)
 
@@ -60,9 +60,9 @@ export class AttackCard extends Card {
     }
 
     async play(gameCtx) {
-        super.play(gameCtx)
+        gameCtx.discard(this)
         gameCtx.advanceTurn()
-        gameCtx.draws += 1
+        gameCtx.draws = (gameCtx.draws === 1) ? 2 : gameCtx.draws + 2
     }
 }
 
@@ -72,12 +72,12 @@ export class CatCard extends Card {
         this.cardId = "cat" + catType
     }
 
-    async play(gameCtx) {
+    async play(gameCtx, target, cardType) {
+        const player = gameCtx.getPlayer()
+        // const target = await gameCtx.choosePlayer(player)
+        // const cardId = await gameCtx.chooseCard(target.hand, player)
+        gameCtx.transferCard(target.hand, player.hand, cardType)
         super.play(gameCtx)
-        const player = gameCtx.currentPlayer()
-        const target = await gameCtx.choosePlayer(player)
-        const cardId = await gameCtx.chooseCard(target.hand, player)
-        gameCtx.transferCard(target.hand, player.hand, cardId)
     }
 }
 
@@ -86,9 +86,10 @@ export class DefuseCard extends Card {
         super(index, "defuse")
     }
 
-    async play(gameCtx) {
+    async play(gameCtx, insertPosition) {
+        // const position = await gameCtx.choosePosition()
+        // gameCtx.deck.insert(this, position)
         super.play(gameCtx)
-        gameCtx.defuse()
     }
 }
 
@@ -98,8 +99,11 @@ export class ExplodingCard extends Card {
     }
 
     async play(gameCtx) {
+        const player = gameCtx.getPlayer()
+        if (player.hand.has("defuse")) {
+            await gameCtx.playCard("defuse")
+        }
         super.play(gameCtx)
-        gameCtx.explode()
     }
 }
 
@@ -108,12 +112,12 @@ export class FavorCard extends Card {
         super(index, "favor")
     }
 
-    async play(gameCtx) {
+    async play(gameCtx, target, cardType) {
+        const player = gameCtx.getPlayer()
+        // const target = await gameCtx.choosePlayer(player)
+        // const cardId = await gameCtx.chooseCard(target.hand, target)
+        gameCtx.transferCard(target.hand, player.hand, cardType)
         super.play(gameCtx)
-        const player = gameCtx.currentPlayer()
-        const target = await gameCtx.choosePlayer(player)
-        const cardId = await gameCtx.chooseCard(target.hand, target)
-        gameCtx.transferCard(target.hand, player.hand, cardId)
     }
 }
 
@@ -123,9 +127,9 @@ export class FutureCard extends Card {
     }
 
     async play(gameCtx) {
+        const player = gameCtx.getPlayer()
+        // await gameCtx.showFuture(player)
         super.play(gameCtx)
-        const player = gameCtx.currentPlayer()
-        await gameCtx.showFuture(player)
     }
 }
 
@@ -135,8 +139,8 @@ export class NopeCard extends Card {
     }
 
     async play(gameCtx) {
-        super.play(gameCtx)
         await gameCtx.nope()
+        super.play(gameCtx)
     }
 }
 
@@ -146,8 +150,8 @@ export class ShuffleCard extends Card {
     }
 
     async play(gameCtx) {
-        super.play(gameCtx)
         gameCtx.shuffle()
+        super.play(gameCtx)
     }
 }
 
@@ -157,12 +161,12 @@ export class SkipCard extends Card {
     }
 
     async play(gameCtx) {
-        super.play(gameCtx)
         if (gameCtx.draws > 1) {
-            gameCtx.draws--
+            gameCtx.draws--;
         } else {
             gameCtx.advanceTurn()
             gameCtx.draws = 1
         }
+        super.draw()
     }
 }
