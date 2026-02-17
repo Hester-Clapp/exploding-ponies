@@ -1,4 +1,5 @@
 import { Deck } from "./Deck.js"
+import { Hand } from "./Hand.js"
 
 export class GameContext {
     constructor(ctx) {
@@ -8,12 +9,42 @@ export class GameContext {
             this.players.set(uuid, { uuid, username, hand, nextPlayerId, isAlive })
         }
         this.deck = Deck.fromData(ctx.deck)
-        this.currentPlayerId = ctx.currentPlayerId
-        this.draws = ctx.draws
+        this.currentPlayerId = ctx.currentPlayerId || ""
+        this.draws = ctx.draws || 1
+    }
+
+    addPlayer(uuid, username) {
+        if (this.players.has(uuid)) return
+        if (this.players.size == 0) {
+            this.currentPlayerId = uuid
+        } else {
+            for (const player of this.players.values()) {
+                if (player.nextPlayerId === this.currentPlayerId) {
+                    player.nextPlayerId = uuid
+                }
+            }
+        }
+        this.players.set(uuid, {
+            uuid,
+            username,
+            hand: new Hand(),
+            nextPlayerId: this.currentPlayerId,
+            isAlive: true
+        })
     }
 
     getPlayer(uuid = this.currentPlayerId) {
         return this.players.get(uuid)
+    }
+
+    eliminate() {
+        const player = this.getPlayer()
+        player.isAlive = false
+        for (const p of this.players.values()) {
+            if (p.nextPlayerId === player.uuid) {
+                p.nextPlayerId = player.nextPlayerId
+            }
+        }
     }
 
     advanceTurn() {
@@ -27,16 +58,6 @@ export class GameContext {
         return card
     }
 
-    eliminate() {
-        const player = this.getPlayer()
-        player.isAlive = false
-        for (const p of this.players.values()) {
-            if (p.nextPlayerId === player.uuid) {
-                p.nextPlayerId = player.nextPlayerId
-            }
-        }
-    }
-
     discard() { return this.deck.discard() }
 
     seeFuture() { return this.deck.seeFuture() }
@@ -47,18 +68,10 @@ export class GameContext {
         const player = this.getPlayer(uuid)
         const card = player.hand.take(cardType)
         if (card) {
-            if (card instanceof CatCard) {
-                if (player.hand.has(cardType)) {
-                    const card2 = player.hand.take(cardType)
-                    this.discard(card2)
-                    await card.play(this, ...args)
-                } else {
-                    // Cannot play only one cat card, so deny action
-                    player.hand.add(card)
-                }
-            } else {
-                await card.play(this, ...args)
+            if (card instanceof CatCard && player.hand.has(cardType, 2)) {
+
             }
+            await card.play(this, ...args)
         }
     }
 }

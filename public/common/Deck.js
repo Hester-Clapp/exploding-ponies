@@ -10,6 +10,8 @@ export class Deck {
     static fromData(data) {
         const deck = new Deck(data.numDecks)
         deck.drawPile = data.drawPile.map(Card.fromData)
+        deck.discardPile = data.discardPile.map(Card.fromData)
+        return deck;
     }
 
     deal(hands) {

@@ -14,8 +14,8 @@ export class Hand {
         }
     }
 
-    has(card) {
-        return this.cards.has(card.cardType) && this.cards.get(card.cardType).length > 0
+    has(card, number = 1) {
+        return this.cards.has(card.cardType) && this.cards.get(card.cardType).length >= number
     }
 
     get(cardType) {
@@ -23,13 +23,13 @@ export class Hand {
         return this.cards.get(cardType)[0]
     }
 
-    take(cardType) {
-        if (!this.has({ cardType })) return null;
+    take(cardType, number = 1) {
+        if (!this.has({ cardType }, number)) return null;
         const cards = this.cards.get(cardType)
-        if (cards.length === 1) {
+        if (cards.length === number) {
             this.cards.delete(cardType)
-            return cards[0]
-        } else return cards.shift()
+            return (number === 1) ? cards[0] : cards
+        } else return cards.splice(0, number)
     }
 
     toArray() {

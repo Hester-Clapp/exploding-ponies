@@ -1,58 +1,64 @@
 import { SocketMessage } from '../../public/common/SocketMessage.js'
 import { Deck } from '../../public/common/Deck.js'
-import { Player } from '../../public/common/Player.js'
+// import { Player } from '../../public/common/Player.js'
+import { GameContext } from '../../public/common/GameContext.js'
 
 export class GameServer {
     constructor(players, sockets, numDecks = 1) {
-        this.deck = new Deck(numDecks)
 
-        this.players = new Map()
+        // Game
+        this.gameCtx = new GameContext({
+            players: {},
+            deck: new Deck(numDecks),
+        });
+
         for (const player of players) {
-            const newPlayer = new Player(player, sockets.get(player.uuid))
-            newPlayer.isReady = new Promise(resolve => newPlayer.setReady = resolve)
-            this.players.set(player.uuid, newPlayer)
+            this.gameCtx.addPlayer(player.uuid, player.username)
         }
 
-        for (let i = 0; i < players.length; i++) {
-            const currentPlayerId = players[i].uuid
-            const nextPlayerId = players[(i + 1) % players.length].uuid
-            this.players.get(currentPlayerId).nextPlayerId = nextPlayerId
+        // Sockets
+        this.sockets = sockets
+
+        for (const socket of sockets.values()) {
+            socket.isReady = new Promise(resolve => {
+                socket.setReady = resolve
+            })
         }
-        this.currentPlayerId = players[0].uuid
     }
 
     setPlayerReady(uuid) {
-        const player = this.players.get(uuid)
-        if (player) player.setReady()
+        const socket = this.sockets.get(uuid)
+        if (socket) socket.setReady()
     }
 
     async allReady() {
-        await Promise.all(Array.from(this.players.values()).map(player => player.isReady))
+        await Promise.all(Array.from(this.sockets.values()).map(socket => socket.isReady))
     }
 
     deal() {
-        this.deck.deal(
-            Array.from(this.players.values())
+        this.gameCtx.deck.deal(
+            Array.from(this.gameCtx.players.values())
                 .map(player => player.hand)
         )
-        for (const player of this.players.values()) {
-            this.send(player.socket, "deal", player.hand.toArray())
+        console.log(this.gameCtx.players)
+        for (const uuid of this.gameCtx.players.keys()) {
+            this.send(this.sockets.get(uuid), "deal", this.gameCtx.getPlayer(uuid).hand.toArray())
         }
     }
 
     advanceTurn() {
-        this.currentPlayerId = this.players.get(this.currentPlayerId).nextPlayerId
+        this.gameCtx.advanceTurn()
         this.publish("nextturn", this.currentPlayerId)
     }
 
-    send(socket, type, payload, sender = socket.id) {
+    send(socket, type, payload, sender = "") {
         new SocketMessage(sender, type, payload).send(socket);
     }
 
     publish(type, payload, sender = null) {
-        for (const [id, player] of this.players) {
+        for (const [id, socket] of this.sockets) {
             if (!sender || id !== sender) {
-                this.send(player.socket, type, payload);
+                this.send(socket, type, payload);
             }
         }
     }
