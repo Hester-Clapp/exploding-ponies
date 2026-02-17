@@ -92,6 +92,7 @@ export class RoomServer {
         // Don't publish
         if (type === "kick") return this.kick(payload.uuid, sender)
         if (type === "ready") return this.gameServer.setPlayerReady(sender)
+        if (type === "playcard") return this.gameServer.playCard(payload.cardType, sender)
 
         // Do then publish
         if (type === "start") this.startGameServer()

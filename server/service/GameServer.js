@@ -45,7 +45,15 @@ export class GameServer {
         }
     }
 
-    playCard(card, uuid) {
+    playCard(cardType, uuid) {
+        console.log(cardType)
+        const player = this.gameCtx.getPlayer(uuid)
+        if (!player.hand.has(cardType)) return;
+        const card = player.hand.take(cardType)
+
+        const socket = this.sockets.get(uuid)
+        this.send(socket, "hand", player.hand.toArray())
+
         this.cardHandler.enqueue(card)
         if (this.resolveTimeoutId) clearTimeout(this.resolveTimeoutId)
         this.resolveTimeoutId = setTimeout(this.playActions.bind(this), this.nopeWindow)
@@ -54,7 +62,8 @@ export class GameServer {
     }
 
     playActions() {
-        const changes = {}
+        console.log("flushing", this.cardHandler.queue)
+        let changes = {}
         for (const action of this.cardHandler.resolve()) {
             action.run(this.gameCtx)
             changes = { ...changes, ...action.changes }

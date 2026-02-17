@@ -13,7 +13,8 @@ export class GameController {
 
         this.eventHandlers = {
             statusupdate: this.bound.setStatus,
-            drawhand: this.bound.drawHand,
+            deal: this.bound.drawHand,
+            hand: this.bound.drawHand,
         }
     }
 
@@ -64,6 +65,7 @@ export class GameController {
     cardToHTML(card) {
         const div = document.createElement("div")
         div.classList.add("card")
+        div.addEventListener("click", () => this.state.roomClient.send("playcard", card))
 
         const img = document.createElement("img")
         img.src = "resources/images/" + card.cardType + ".png"

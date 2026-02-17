@@ -18,7 +18,6 @@ export class GameClient {
     initialiseHand(event) {
         const cards = event.detail
         this.state.hand = new Hand(cards)
-        window.dispatchEvent(new CustomEvent("drawhand"))
     }
 
     onNextTurn(event) {

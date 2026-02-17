@@ -13,22 +13,22 @@ export class Hand {
         }
     }
 
-    has(card, number = 1) {
-        return this.cards.has(card.cardType) && this.cards.get(card.cardType).length >= number
+    has(cardType, number = 1) {
+        return this.cards.has(cardType) && this.cards.get(cardType).length >= number
     }
 
     get(cardType) {
-        if (!this.has({ cardType })) return null;
+        if (!this.has(cardType)) return null;
         return this.cards.get(cardType)[0]
     }
 
-    take(cardType, number = 1) {
-        if (!this.has({ cardType }, number)) return null;
+    take(cardType) {
+        if (!this.has(cardType)) return null;
         const cards = this.cards.get(cardType)
-        if (cards.length === number) {
+        if (cards.length === 1) {
             this.cards.delete(cardType)
-            return (number === 1) ? cards[0] : cards
-        } else return cards.splice(0, number)
+            return cards[0]
+        } else return cards.shift()
     }
 
     toArray() {

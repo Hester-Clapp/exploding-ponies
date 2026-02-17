@@ -3,24 +3,26 @@ export class Action {
 
     constructor(cardType) {
         this.cardType = cardType
+    }
 
+    static ofType(cardType) {
         switch (cardType) {
             case "attack":
-                return new AttackAction()
+                return new AttackAction(cardType)
             case "defuse":
-                return new DefuseAction()
+                return new DefuseAction(cardType)
             case "exploding":
-                return new ExplodingAction()
+                return new ExplodingAction(cardType)
             case "future":
-                return new FutureAction()
+                return new FutureAction(cardType)
             case "shuffle":
-                return new ShuffleAction()
+                return new ShuffleAction(cardType)
             case "skip":
-                return new SkipAction()
+                return new SkipAction(cardType)
             case "double":
             case "triple":
             case "favor":
-                return new TransferAction()
+                return new TransferAction(cardType)
             default:
                 throw new Error("Unknown card type: " + cardType)
         }

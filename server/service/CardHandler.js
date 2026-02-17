@@ -45,10 +45,12 @@ export class CardHandler {
                     i++
                     break;
                 default:
-                    actions.unshift(new Action(card.cardType))
+                    const action = Action.ofType(card.cardType)
+                    actions.unshift(action)
                     break;
             }
         }
+        this.queue = []
         return actions
     }
 }
