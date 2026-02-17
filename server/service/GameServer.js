@@ -1,6 +1,5 @@
 import { SocketMessage } from '../../public/common/SocketMessage.js'
-import { Deck } from '../../public/common/Deck.js'
-// import { Player } from '../../public/common/Player.js'
+import { CardHandler } from './CardHandler.js'
 import { GameContext } from '../../public/common/GameContext.js'
 
 export class GameServer {
@@ -40,15 +39,19 @@ export class GameServer {
             Array.from(this.gameCtx.players.values())
                 .map(player => player.hand)
         )
-        console.log(this.gameCtx.players)
         for (const uuid of this.gameCtx.players.keys()) {
             this.send(this.sockets.get(uuid), "deal", this.gameCtx.getPlayer(uuid).hand.toArray())
         }
     }
 
-    advanceTurn() {
-        this.gameCtx.advanceTurn()
-        this.publish("nextturn", this.currentPlayerId)
+    // advanceTurn() {
+    //     this.gameCtx.advanceTurn()
+    //     this.publish("nextturn", this.currentPlayerId)
+    // }
+
+    setupGame() {
+        this.deal()
+        this.publish("update", this.gameCtx)
     }
 
     send(socket, type, payload, sender = "") {

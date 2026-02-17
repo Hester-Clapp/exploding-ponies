@@ -1,16 +1,18 @@
 import { Deck } from "./Deck.js"
-import { Hand } from "./Hand.js"
+import { DiscardPile } from "./DiscardPile.js"
+import { Hand } from "../../public/common/Hand.js"
 
 export class GameContext {
-    constructor(ctx) {
+    constructor(numDecks) {
         this.players = new Map()
-        for (const uuid in ctx.players) {
-            const { username, hand, nextPlayerId, isAlive } = ctx.players[uuid]
-            this.players.set(uuid, { uuid, username, hand, nextPlayerId, isAlive })
-        }
-        this.deck = Deck.fromData(ctx.deck)
-        this.currentPlayerId = ctx.currentPlayerId || ""
-        this.draws = ctx.draws || 1
+        // for (const uuid in ctx.players) {
+        //     const { username, hand, nextPlayerId, isAlive } = ctx.players[uuid]
+        //     this.players.set(uuid, { uuid, username, hand, nextPlayerId, isAlive })
+        // }
+        this.deck = new Deck(numDecks)
+        this.discardPile = new DiscardPile()
+        this.currentPlayerId = currentPlayerId
+        this.draws = draws
     }
 
     addPlayer(uuid, username) {

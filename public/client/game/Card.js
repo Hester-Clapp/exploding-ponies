@@ -52,6 +52,10 @@ export class Card {
 
         return div
     }
+
+    stacksOn() {
+        return false
+    }
 }
 
 export class AttackCard extends Card {
@@ -74,10 +78,12 @@ export class CatCard extends Card {
 
     async play(gameCtx, target, cardType) {
         const player = gameCtx.getPlayer()
-        // const target = await gameCtx.choosePlayer(player)
-        // const cardId = await gameCtx.chooseCard(target.hand, player)
         gameCtx.transferCard(target.hand, player.hand, cardType)
         super.play(gameCtx)
+    }
+
+    stacksOn(that) {
+        return (that instanceof CatCard) && this.cardType === that.cardType
     }
 }
 
@@ -87,8 +93,7 @@ export class DefuseCard extends Card {
     }
 
     async play(gameCtx, insertPosition) {
-        // const position = await gameCtx.choosePosition()
-        // gameCtx.deck.insert(this, position)
+        gameCtx.deck.insert(this, position)
         super.play(gameCtx)
     }
 }
@@ -114,8 +119,6 @@ export class FavorCard extends Card {
 
     async play(gameCtx, target, cardType) {
         const player = gameCtx.getPlayer()
-        // const target = await gameCtx.choosePlayer(player)
-        // const cardId = await gameCtx.chooseCard(target.hand, target)
         gameCtx.transferCard(target.hand, player.hand, cardType)
         super.play(gameCtx)
     }

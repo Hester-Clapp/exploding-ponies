@@ -31,7 +31,6 @@ export class GameController {
             window.addEventListener(event, this.eventHandlers[event])
         }
 
-        console.log(this.state.gameClient)
         this.state.roomClient.send("ready", null)
 
         this.drawPlayerList();
