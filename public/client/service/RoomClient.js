@@ -49,6 +49,7 @@ export class RoomClient {
 
     onMessage(event) {
         const { type, payload } = SocketMessage.fromEvent(event);
+        console.log(type)
         switch (type) {
             case "init":
                 this.initializePlayers(payload);

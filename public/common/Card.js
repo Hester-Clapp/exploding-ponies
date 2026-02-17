@@ -9,7 +9,6 @@ export class Card {
 
     static fromData(data) {
         const { index, cardType } = data
-        console.log(data)
         switch (cardType) {
             case "attack":
                 return new AttackCard(index)

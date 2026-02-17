@@ -8,7 +8,9 @@ export class GameServer {
 
         this.players = new Map()
         for (const player of players) {
-            this.players.set(player.uuid, new Player(player, sockets.get(player.uuid)))
+            const newPlayer = new Player(player, sockets.get(player.uuid))
+            newPlayer.isReady = new Promise(resolve => newPlayer.setReady = resolve)
+            this.players.set(player.uuid, newPlayer)
         }
 
         for (let i = 0; i < players.length; i++) {
@@ -19,12 +21,20 @@ export class GameServer {
         this.currentPlayerId = players[0].uuid
     }
 
+    setPlayerReady(uuid) {
+        const player = this.players.get(uuid)
+        if (player) player.setReady()
+    }
+
+    async allReady() {
+        await Promise.all(Array.from(this.players.values()).map(player => player.isReady))
+    }
+
     deal() {
         this.deck.deal(
             Array.from(this.players.values())
                 .map(player => player.hand)
         )
-        console.log(this.deck)
         for (const player of this.players.values()) {
             this.send(player.socket, "deal", player.hand.toArray())
         }
@@ -36,7 +46,7 @@ export class GameServer {
 
     advanceTurn() {
         this.currentPlayerId = this.players.get(this.currentPlayerId).nextPlayerId
-        this.publish("nextturn", { uuid: this.currentPlayerId })
+        this.publish("nextturn", this.currentPlayerId)
     }
 
     seeFuture() {

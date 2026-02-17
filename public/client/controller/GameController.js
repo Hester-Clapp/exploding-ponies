@@ -7,26 +7,36 @@ export class GameController {
         this.state = state
 
         this.bound = {
+            setStatus: this.setStatus.bind(this),
+            drawHand: this.drawHand.bind(this),
         }
 
         this.eventHandlers = {
+            statusupdate: this.bound.setStatus,
+            handupdate: this.bound.drawHand,
         }
     }
 
     async beforeLoad() {
-        this.state.gameClient = new GameClient(this.state)
+
     }
 
     async afterLoad() {
+        this.state.gameClient = new GameClient(this.state)
+
         const leave = document.getElementById("leave");
         leave.addEventListener("click", this.leaveRoom.bind(this));
+
+        for (const event in this.eventHandlers) {
+            window.addEventListener(event, this.eventHandlers[event])
+        }
+
+        console.log(this.state.gameClient)
+        this.state.roomClient.send("ready", null)
 
         this.drawPlayerList();
         this.drawHand();
 
-        // for (const event in this.eventHandlers) {
-        //     window.addEventListener(event, this.eventHandlers[event])
-        // }
     }
 
     drawPlayerList() {
@@ -51,6 +61,11 @@ export class GameController {
         for (const card of hand.toArray()) {
             handDisplay.appendChild(card.toHTML());
         }
+    }
+
+    setStatus(event) {
+        console.log(event.detail)
+        document.getElementById("status").textContent = event.detail;
     }
 
     async leaveRoom() {

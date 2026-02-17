@@ -88,11 +88,17 @@ export class RoomServer {
 
     onMessage(event) {
         const { sender, type, payload } = SocketMessage.fromEvent(event);
+
+        // Don't publish
         if (type === "kick") return this.kick(payload.uuid, sender)
+        if (type === "ready") return this.gameServer.setPlayerReady(sender)
+
+        // Do then publish
+        if (type === "start") this.startGameServer()
 
         this.publish(type, payload);
 
-        if (type === "start") this.start()
+        // Publish then do
     }
 
     onClose(ws) {
@@ -125,10 +131,12 @@ export class RoomServer {
         this.send(target, "kick", { message: `You were kicked from room ${this.roomId}` }, sender)
     }
 
-    start() {
-        const gameServer = new GameServer(this.getPlayers(), this.sockets, this.decks);
-        gameServer.deal();
-        gameServer.advanceTurn();
+    startGameServer() {
+        this.gameServer = new GameServer(this.getPlayers(), this.sockets, this.decks);
+        this.gameServer.allReady().then(() => {
+            this.gameServer.deal();
+            this.gameServer.advanceTurn();
+        })
     }
 
     send(socket, type, payload, sender = socket.id) {
