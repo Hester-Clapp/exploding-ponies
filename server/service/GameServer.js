@@ -1,19 +1,20 @@
 import { SocketMessage } from '../../public/common/SocketMessage.js'
 import { CardHandler } from './CardHandler.js'
-import { GameContext } from '../../public/common/GameContext.js'
+import { GameContext } from '../game/GameContext.js'
 
 export class GameServer {
     constructor(players, sockets, numDecks = 1) {
 
         // Game
-        this.gameCtx = new GameContext({
-            players: {},
-            deck: new Deck(numDecks),
-        });
+        this.gameCtx = new GameContext(numDecks)
 
         for (const player of players) {
             this.gameCtx.addPlayer(player.uuid, player.username)
         }
+
+        this.cardHandler = new CardHandler()
+        this.nopeWindow = 3000
+        this.resolveTimeoutId = undefined
 
         // Sockets
         this.sockets = sockets
@@ -44,14 +45,33 @@ export class GameServer {
         }
     }
 
-    // advanceTurn() {
-    //     this.gameCtx.advanceTurn()
-    //     this.publish("nextturn", this.currentPlayerId)
-    // }
-
     setupGame() {
         this.deal()
-        this.publish("update", this.gameCtx)
+        // this.publish("update", this.gameCtx)
+    }
+
+    playCard(card, uuid) {
+        this.cardHandler.enqueue(card)
+        if (this.resolveTimeoutId) clearTimeout(this.resolveTimeoutId)
+        this.resolveTimeoutId = setTimeout(this.playActions.bind(this), this.nopeWindow)
+
+        this.publish("playcard", { card, uuid })
+    }
+
+    playActions() {
+        const changes = {}
+        for (const action of this.cardHandler.resolve()) {
+            action.run(this.gameCtx)
+            changes = { ...changes, ...action.changes }
+        }
+
+        // Send changes
+        for (const uuid of this.gameCtx.players.keys()) {
+            this.send(this.sockets.get(uuid), "hand", this.gameCtx.getPlayer(uuid).hand.toArray())
+        }
+        // if ("deck" in changes) this.publish("deck", { length: this.gameCtx.deck.cards.length })
+        if ("draws" in changes) this.publish("draws", this.gameCtx.draws)
+        if ("turn" in changes) this.publish("turn", this.gameCtx.currentPlayerId)
     }
 
     send(socket, type, payload, sender = "") {

@@ -39,7 +39,7 @@ export class GameContext {
         return this.players.get(uuid)
     }
 
-    eliminate() {
+    eliminatePlayer() {
         const player = this.getPlayer()
         player.isAlive = false
         for (const p of this.players.values()) {
@@ -62,18 +62,24 @@ export class GameContext {
 
     discard() { return this.deck.discard() }
 
+    transferCard(from, to, cardType) {
+        if (!from.hand.has(cardType)) return;
+        const card = from.hand.take(cardType)
+        to.hand.add(card)
+    }
+
     seeFuture() { return this.deck.seeFuture() }
 
     shuffle() { this.deck.shuffle() }
 
-    async playCard(cardType, ...args) {
-        const player = this.getPlayer(uuid)
-        const card = player.hand.take(cardType)
-        if (card) {
-            if (card instanceof CatCard && player.hand.has(cardType, 2)) {
+    // async playCard(cardType, ...args) {
+    //     const player = this.getPlayer(uuid)
+    //     const card = player.hand.take(cardType)
+    //     if (card) {
+    //         if (card instanceof CatCard && player.hand.has(cardType, 2)) {
 
-            }
-            await card.play(this, ...args)
-        }
-    }
+    //         }
+    //         await card.play(this, ...args)
+    //     }
+    // }
 }

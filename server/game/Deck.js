@@ -1,4 +1,4 @@
-import { AttackCard, CatCard, DefuseCard, ExplodingCard, FavorCard, FutureCard, NopeCard, ShuffleCard, SkipCard } from "../../public/client/game/Card.js"
+import { AttackCard, CatCard, DefuseCard, ExplodingCard, FavorCard, FutureCard, NopeCard, ShuffleCard, SkipCard } from "../../public/common/Card.js"
 
 export class Deck {
     constructor(numDecks = 1) {
@@ -49,6 +49,10 @@ export class Deck {
 
     discard(card) {
         this.discard.push(card)
+    }
+
+    insert(card, position) {
+        this.cards.splice(position, 0, card)
     }
 
     shuffle() {

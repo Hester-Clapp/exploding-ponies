@@ -2,20 +2,22 @@ import { Action } from "../game/Action.js"
 
 export class CardHandler {
     constructor() {
-        this.stack = []
+        this.queue = []
+        this.changes = {}
     }
 
-    push(card) {
-        this.stack.unshift(card)
+    enqueue(card) {
+        this.queue.unshift(card)
     }
 
     resolve() {
         const actions = []
-        for (let i = 0; i < this.stack.length; i++) {
-            const card = this.stack[i]
-            const nextCard = this.stack?.[i + 1]
-            const nextNextCard = this.stack?.[i + 2]
-            const nextNextNextCard = this.stack?.[i + 3]
+        this.changes = {}
+        for (let i = 0; i < this.queue.length; i++) {
+            const card = this.queue[i]
+            const nextCard = this.queue?.[i + 1]
+            const nextNextCard = this.queue?.[i + 2]
+            const nextNextNextCard = this.queue?.[i + 3]
             switch (card.cardType) {
                 case "nope":
                     if (nextCard.stacksOn(nextNextCard)) {
@@ -24,14 +26,16 @@ export class CardHandler {
                     }
                     i++;
                     break;
+                case "defuse":
+                    if (nextCard?.cardType === "exploding") i++
+                    break;
                 case "cat1":
                 case "cat2":
                 case "cat3":
                 case "cat4":
                 case "cat5":
                     if (card.stacksOn(nextCard)) {
-                        if (nextCard.stacksOn(nextNextCard)
-                            && !nextNextCard.stacksOn(nextNextNextCard)) { // Interpret 4 as 2 doubles ipv 1 triple
+                        if (nextCard.stacksOn(nextNextCard) && !nextNextCard.stacksOn(nextNextNextCard)) { // Interpret 4 as 2 doubles ipv 1 triple
                             actions.unshift(new Action("triple"))
                             i++
                         } else {
