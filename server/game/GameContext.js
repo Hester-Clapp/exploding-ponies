@@ -1,5 +1,4 @@
 import { Deck } from "./Deck.js"
-import { DiscardPile } from "./DiscardPile.js"
 import { Hand } from "../../public/common/Hand.js"
 
 export class GameContext {
@@ -10,9 +9,8 @@ export class GameContext {
         //     this.players.set(uuid, { uuid, username, hand, nextPlayerId, isAlive })
         // }
         this.deck = new Deck(numDecks)
-        this.discardPile = new DiscardPile()
-        this.currentPlayerId = currentPlayerId
-        this.draws = draws
+        this.currentPlayerId = ""
+        this.draws = 1
     }
 
     addPlayer(uuid, username) {

@@ -1,6 +1,7 @@
 export class Hand {
-    constructor() {
+    constructor(cards = []) {
         this.cards = new Map()
+        cards.forEach(card => this.add(card))
     }
 
     add(card) {

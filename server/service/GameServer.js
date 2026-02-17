@@ -45,11 +45,6 @@ export class GameServer {
         }
     }
 
-    setupGame() {
-        this.deal()
-        // this.publish("update", this.gameCtx)
-    }
-
     playCard(card, uuid) {
         this.cardHandler.enqueue(card)
         if (this.resolveTimeoutId) clearTimeout(this.resolveTimeoutId)

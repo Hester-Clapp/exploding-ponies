@@ -35,18 +35,6 @@ export class Card {
         }
     }
 
-    toHTML() {
-        const div = document.createElement("div")
-        div.classList.add("card")
-
-        const img = document.createElement("img")
-        img.src = "resources/images/" + this.cardType + ".png"
-        img.alt = this.cardType
-        div.appendChild(img)
-
-        return div
-    }
-
     stacksOn() {
         return false
     }

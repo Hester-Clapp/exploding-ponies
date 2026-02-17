@@ -1,3 +1,5 @@
+import { Hand } from "../../common/Hand.js"
+
 export class GameClient {
     constructor(state) {
         this.state = state
@@ -15,11 +17,8 @@ export class GameClient {
 
     initialiseHand(event) {
         const cards = event.detail
-        for (const cardData of cards) {
-            const card = Card.fromData(cardData)
-            this.hand.add(card)
-        }
-        window.dispatchEvent(new CustomEvent("handupdate", { detail: cards }))
+        this.state.hand = new Hand(cards)
+        window.dispatchEvent(new CustomEvent("drawhand"))
     }
 
     onNextTurn(event) {

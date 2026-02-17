@@ -13,7 +13,7 @@ export class GameController {
 
         this.eventHandlers = {
             statusupdate: this.bound.setStatus,
-            handupdate: this.bound.drawHand,
+            drawhand: this.bound.drawHand,
         }
     }
 
@@ -34,7 +34,7 @@ export class GameController {
         this.state.roomClient.send("ready", null)
 
         this.drawPlayerList();
-        this.drawHand();
+        // this.drawHand();
 
     }
 
@@ -56,10 +56,21 @@ export class GameController {
         const handDisplay = document.getElementById("hand");
         handDisplay.innerHTML = "";
 
-        const hand = this.state.players.get(this.state.uuid).hand
-        for (const card of hand.toArray()) {
-            handDisplay.appendChild(card.toHTML());
+        for (const card of this.state.hand.toArray()) {
+            handDisplay.appendChild(this.cardToHTML(card));
         }
+    }
+
+    cardToHTML(card) {
+        const div = document.createElement("div")
+        div.classList.add("card")
+
+        const img = document.createElement("img")
+        img.src = "resources/images/" + card.cardType + ".png"
+        img.alt = card.cardType
+        div.appendChild(img)
+
+        return div
     }
 
     setStatus(event) {
