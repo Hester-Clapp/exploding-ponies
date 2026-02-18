@@ -92,10 +92,11 @@ export class RoomServer {
         // Don't publish
         if (type === "kick") return this.kick(payload.uuid, sender)
         if (type === "ready") return this.gameServer.setPlayerReady(sender)
-        if (type === "playcard") return this.gameServer.playCard(payload.cardType, sender)
+        if (type === "cardinput") return this.gameServer.provideInput(payload.input, payload.value)
 
         // Do then publish
         if (type === "start") this.startGameServer()
+        if (type === "playcard") this.gameServer.playCard(payload.cardType, sender)
 
         this.publish(type, payload);
 
@@ -135,7 +136,6 @@ export class RoomServer {
     startGameServer() {
         this.gameServer = new GameServer(this.getPlayers(), this.sockets, this.decks);
         this.gameServer.allReady().then(() => {
-            // this.gameServer.initialise();
             this.gameServer.deal();
             // this.gameServer.advanceTurn();
         })

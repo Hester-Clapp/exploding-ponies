@@ -1,4 +1,4 @@
-import { Action } from "../game/Action.js"
+import { Action, TransferAction } from "../game/Action.js"
 
 export class CardHandler {
     constructor() {
@@ -36,10 +36,10 @@ export class CardHandler {
                 case "cat5":
                     if (card.stacksOn(nextCard)) {
                         if (nextCard.stacksOn(nextNextCard) && !nextNextCard.stacksOn(nextNextNextCard)) { // Interpret 4 as 2 doubles ipv 1 triple
-                            actions.unshift(new Action("triple"))
+                            actions.unshift(new TransferAction())
                             i++
                         } else {
-                            actions.unshift(new Action("double"))
+                            actions.unshift(new TransferAction())
                         }
                     }
                     i++

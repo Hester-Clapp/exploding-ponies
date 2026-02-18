@@ -16,7 +16,8 @@ async function handle(req) {
     }
 
     if (req.method === "DELETE" && pathname === "/play") {
-        userHandler.remove(searchParams.get("uuid"));
+        const uuid = searchParams.get("uuid")
+        userHandler.remove(uuid);
         return json({ uuid });
     }
 

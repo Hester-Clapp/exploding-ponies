@@ -16,6 +16,9 @@ export class GameServer {
         this.nopeWindow = 3000
         this.resolveTimeoutId = undefined
 
+        this.cachedInputs = new Map() // name => value
+        this.pendingInputs = new Map() // name => resolver
+
         // Sockets
         this.sockets = sockets
 
@@ -51,22 +54,49 @@ export class GameServer {
         if (!player.hand.has(cardType)) return;
         const card = player.hand.take(cardType)
 
-        const socket = this.sockets.get(uuid)
-        this.send(socket, "hand", player.hand.toArray())
-
         this.cardHandler.enqueue(card)
         if (this.resolveTimeoutId) clearTimeout(this.resolveTimeoutId)
-        this.resolveTimeoutId = setTimeout(this.playActions.bind(this), this.nopeWindow)
-
-        this.publish("playcard", { card, uuid })
+        this.resolveTimeoutId = setTimeout(this.resolveActions.bind(this), this.nopeWindow)
     }
 
-    playActions() {
-        console.log("flushing", this.cardHandler.queue)
-        let changes = {}
-        for (const action of this.cardHandler.resolve()) {
+    provideInput(input, value) {
+        if (this.pendingInputs.has(input)) {
+            const action = this.pendingInputs.get(input)
+            action.provideInput(input, value)
+            this.pendingInputs.delete(input)
+        }
+        this.cachedInputs.set(input, value)
+    }
+
+    resolveActions() {
+        const actions = this.cardHandler.resolve()
+
+        for (const action of actions) {
+            for (const input in action.inputs) {
+                if (this.cachedInputs.has(input)) {
+                    action.provideInput(input, this.cachedInputs.get(input))
+                } else {
+                    this.pendingInputs.set(input, action)
+                }
+            }
+        }
+
+        const inputPromises = actions.flatMap(action =>
+            Object.values(action.inputs)
+        )
+
+        Promise.all(inputPromises).then(() => this.playActions(actions))
+    }
+
+    playActions(actions) {
+        console.log("playing", actions)
+        this.cachedInputs.clear()
+        this.pendingInputs.clear()
+
+        const changes = {}
+        for (const action of actions) {
             action.run(this.gameCtx)
-            changes = { ...changes, ...action.changes }
+            Object.assign(changes, action.changes)
         }
 
         // Send changes

@@ -9,12 +9,14 @@ export class GameController {
         this.bound = {
             setStatus: this.setStatus.bind(this),
             drawHand: this.drawHand.bind(this),
+            drawDiscard: this.drawDiscard.bind(this),
         }
 
         this.eventHandlers = {
             statusupdate: this.bound.setStatus,
             deal: this.bound.drawHand,
             hand: this.bound.drawHand,
+            playcard: this.bound.drawDiscard,
         }
     }
 
@@ -58,14 +60,25 @@ export class GameController {
         handDisplay.innerHTML = "";
 
         for (const card of this.state.hand.toArray()) {
-            handDisplay.appendChild(this.cardToHTML(card));
+            const cardDiv = this.cardToHTML(card)
+            handDisplay.appendChild(cardDiv);
+            cardDiv.addEventListener("click", () => {
+                this.state.roomClient.send("playcard", card)
+                cardDiv.remove()
+            })
         }
+    }
+
+    drawDiscard(event) {
+        const card = event.detail
+        const discardPile = document.getElementById("discardPile");
+        discardPile.innerHTML = "";
+        discardPile.appendChild(this.cardToHTML(card));
     }
 
     cardToHTML(card) {
         const div = document.createElement("div")
         div.classList.add("card")
-        div.addEventListener("click", () => this.state.roomClient.send("playcard", card))
 
         const img = document.createElement("img")
         img.src = "resources/images/" + card.cardType + ".png"
