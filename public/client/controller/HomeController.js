@@ -29,7 +29,7 @@ export class HomeController {
             localStorage.setItem("username", this.username)
             sessionStorage.setItem("username", this.username)
         } else {
-            this.state.username = getPonyName()
+            this.username = getPonyName()
         }
         this.res = await fetch(`/play?username=${this.username}`, { method: "POST" }).then(res => res.json());
         loadPage("rooms", this.res.uuid);

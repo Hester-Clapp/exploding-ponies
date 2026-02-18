@@ -59,6 +59,8 @@ export class GameServer {
         this.cardHandler.enqueue(card)
         if (this.resolveTimeoutId) clearTimeout(this.resolveTimeoutId)
         this.resolveTimeoutId = setTimeout(this.resolveActions.bind(this), this.nopeWindow)
+
+        this.publish("playcard", { card, allowNope: true })
     }
 
     provideInput(input, value) {
@@ -71,6 +73,8 @@ export class GameServer {
     }
 
     resolveActions() {
+        this.publish("allownope", { allowNope: false })
+
         const actions = this.cardHandler.resolve()
 
         for (const action of actions) {

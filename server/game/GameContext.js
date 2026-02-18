@@ -4,10 +4,7 @@ import { Hand } from "../../public/common/Hand.js"
 export class GameContext {
     constructor(numDecks) {
         this.players = new Map()
-        // for (const uuid in ctx.players) {
-        //     const { username, hand, nextPlayerId, isAlive } = ctx.players[uuid]
-        //     this.players.set(uuid, { uuid, username, hand, nextPlayerId, isAlive })
-        // }
+
         this.deck = new Deck(numDecks)
         this.currentPlayerId = ""
         this.draws = 1

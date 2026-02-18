@@ -25,7 +25,7 @@ export class RoomController {
         this.uuid = uuid
 
         this.roomClient = new RoomClient(uuid);
-        await this.roomClient.joinRoom(roomId, uuid)
+        await this.roomClient.joinRoom(roomId)
 
     }
 

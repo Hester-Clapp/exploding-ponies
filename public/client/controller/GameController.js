@@ -60,9 +60,19 @@ export class GameController {
         for (const card of hand) {
             const cardDiv = this.cardToHTML(card)
             handDisplay.appendChild(cardDiv);
+
+            window.addEventListener("enablecard", (event) => {
+                const isEnabled = event.detail[card.cardType]
+                console.log(card.cardType, isEnabled)
+                cardDiv.classList.toggle("enabled", isEnabled)
+                cardDiv.classList.toggle("disabled", !isEnabled)
+            })
+
             cardDiv.addEventListener("click", () => {
-                this.gameClient.send("playcard", card)
-                cardDiv.remove()
+                if (cardDiv.classList.contains("enabled")) {
+                    this.gameClient.send("playcard", card)
+                    cardDiv.remove()
+                }
             })
         }
     }
@@ -78,12 +88,6 @@ export class GameController {
         const div = document.createElement("div")
         div.classList.add("card")
         div.title = `Play ${card.cardType} card`
-
-        window.addEventListener("nextturn", (event) => {
-            const myTurn = event.detail
-            div.classList.toggle("enabled", myTurn)
-            div.classList.toggle("disabled", !myTurn)
-        })
 
         const img = document.createElement("img")
         img.src = "resources/images/" + card.cardType + ".png"

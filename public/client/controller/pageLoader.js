@@ -10,6 +10,8 @@ const controllers = {
     game: new GameController(),
 }
 
+window.ctrl = controllers
+
 const app = document.getElementById("app")
 
 export async function loadPage(page, ...args) {

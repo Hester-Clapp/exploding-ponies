@@ -12,18 +12,23 @@ export class GameClient {
         switch (type) {
             case "deal":
                 this.initialiseHand(payload)
-                this.dispatchEvent("deal", payload)
                 break
             case "nextturn":
                 this.nextTurn(payload)
-                this.dispatchEvent("nextturn", payload)
+                break
+            case "playcard":
+                console.log(payload)
+                this.lastCard = payload.card
+                this.dispatchEvent("playcard", payload.card)
+            case "allownope":
+                this.configureCardPlayability(payload.allowNope)
                 break
         }
-        // window.dispatchEvent(new CustomEvent(type, { detail: payload }));
     }
 
     initialiseHand(cards) {
         this.hand = new Hand(cards)
+        this.dispatchEvent("deal", cards)
     }
 
     nextTurn(uuid) {
@@ -33,6 +38,29 @@ export class GameClient {
         this.dispatchEvent("statusupdate", isMyTurn
             ? "It's your turn!"
             : `It's ${this.getPlayer()}'s turn`)
+
+        this.configureCardPlayability()
+
+    }
+
+    configureCardPlayability(allowNope = false) {
+        const isMyTurn = this.currentPlayerId === this.uuid
+        const lastCardType = this.lastCard?.cardType
+        const playableCards = {
+            "attack": isMyTurn,
+            "cat1": isMyTurn,
+            "cat2": isMyTurn,
+            "cat3": isMyTurn,
+            "cat4": isMyTurn,
+            "cat5": isMyTurn,
+            "defuse": lastCardType === "exploding",
+            "favor": isMyTurn,
+            "future": isMyTurn,
+            "nope": allowNope && (!isMyTurn || lastCardType === "nope"),
+            "shuffle": isMyTurn,
+            "skip": isMyTurn,
+        }
+        this.dispatchEvent("enablecard", playableCards)
     }
 
     async choosePlayer() {

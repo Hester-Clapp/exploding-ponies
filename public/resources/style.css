@@ -150,11 +150,10 @@ output {
 }
 
 .card.disabled {
-    filter: brightness(-0.5);
+    filter: brightness(0.5);
 }
 
 .card.enabled {
-    filter: brightness(-0.5);
     cursor: pointer;
 }
 
