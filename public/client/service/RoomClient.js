@@ -1,17 +1,27 @@
 import { SocketMessage } from '../../common/SocketMessage.js';
+import { GameClient } from '../service/GameClient.js';
 
 export class RoomClient {
-    constructor(state) {
+    constructor(uuid) {
+        this.uuid = uuid
+
         this.baseHttp = location.origin;
         this.baseWs = location.origin.replace(/^http/, "ws");
+        this.players = new Map()
 
-        this.bound = { message: this.onMessage.bind(this) }
-
-        this.state = state
+        this.bound = {
+            message: this.onMessage.bind(this),
+            init: this.initializePlayers.bind(this),
+            join: this.playerJoin.bind(this),
+            leave: this.playerLeave.bind(this),
+            kick: this.onKick.bind(this),
+            promote: this.dispatchEvent.bind(this, "promote"),
+            start: this.onStart.bind(this),
+        }
     }
 
     socketIsOpen() {
-        return this.state.socket?.readyState === WebSocket.OPEN
+        return this.socket?.readyState === WebSocket.OPEN
     }
 
     async createRoom() {
@@ -24,27 +34,23 @@ export class RoomClient {
     }
 
     async joinRoom(roomId) {
-        this.state.socket = new WebSocket(`${this.baseWs}/join?roomId=${roomId}&uuid=${this.state.uuid}`);
-        this.state.socket.addEventListener("message", this.bound.message)
-        return this.state.socket;
+        this.socket = new WebSocket(`${this.baseWs}/join?roomId=${roomId}&uuid=${this.uuid}`);
+        this.socket.addEventListener("message", this.bound.message)
     }
 
     async leaveRoom() {
-        this.state.socket.removeEventListener("message", this.bound.message)
+        this.socket.removeEventListener("message", this.bound.message)
 
         await new Promise((resolve) => {
-            this.state.socket.addEventListener("close", resolve, { once: true });
-            this.state.socket.close();
+            this.socket.addEventListener("close", resolve, { once: true });
+            this.socket.close();
         });
 
-        delete this.state.socket
-        delete this.state.roomId
-        delete this.state.gameClient
-        this.state.players.clear()
+        this.players.clear()
     }
 
     kickPlayer(uuid) {
-        new SocketMessage(this.state.uuid, "kick", { uuid }).send(this.state.socket)
+        new SocketMessage(this.uuid, "kick", { uuid }).send(this.socket)
     }
 
     onMessage(event) {
@@ -52,47 +58,60 @@ export class RoomClient {
         console.log(type)
         switch (type) {
             case "init":
-                this.initializePlayers(payload);
-                break
             case "join":
-                this.playerJoin(payload);
-                break
             case "leave":
-                this.playerLeave(payload);
-                break
             case "kick":
-                alert(payload.message)
-                this.state.leaveRoom();
+            case "promote":
+            case "start":
+                this.bound[type](payload)
                 break
+            default:
+                this.gameClient?.onMessage(type, payload)
         }
-        window.dispatchEvent(new CustomEvent(type, { detail: payload }));
     }
 
     initializePlayers(players) {
-        if (this.state.players) this.state.players.clear()
-        else this.state.players = new Map()
+        this.players.clear()
 
         for (const player of players) {
-            this.state.players.set(player.uuid, player.username);
+            this.players.set(player.uuid, player.username);
         }
+        this.dispatchEvent("drawplayerlist")
     }
 
     playerJoin(user) {
         console.log(`${user.username} has joined the game`);
-        this.state.players.set(user.uuid, user.username);
+        this.players.set(user.uuid, user.username);
+        this.dispatchEvent("drawplayerlist")
     }
 
     playerLeave(user) {
         console.log(`${user.username} has left the game`);
-        this.state.players.delete(user.uuid);
+        this.players.delete(user.uuid);
+        this.dispatchEvent("drawplayerlist")
+    }
+
+    onKick() {
+        this.leaveRoom();
     }
 
     startGame() {
         this.send("start", {})
     }
 
+    onStart() {
+        this.gameClient = new GameClient(this.uuid, this.players, this.socket)
+        this.dispatchEvent("start")
+    }
+
     send(type, payload) {
-        const message = new SocketMessage(this.state.uuid, type, payload);
-        this.state.socket.send(message.toString());
+        const message = new SocketMessage(this.uuid, type, payload);
+        this.socket.send(message.toString());
+    }
+
+    dispatchEvent(type, detail) {
+        window.dispatchEvent(detail
+            ? new CustomEvent(type, { detail })
+            : new CustomEvent(type))
     }
 }

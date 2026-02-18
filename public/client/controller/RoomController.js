@@ -1,8 +1,8 @@
 import { loadPage } from './pageLoader.js';
+import { RoomClient } from '../service/RoomClient.js';
 
 export class RoomController {
-    constructor(state) {
-        this.state = state
+    constructor() {
         this.isHost = false
 
         this.bound = {
@@ -13,23 +13,24 @@ export class RoomController {
         }
 
         this.eventHandlers = {
-            init: this.bound.drawPlayerList,
-            join: this.bound.drawPlayerList,
-            leave: this.bound.drawPlayerList,
+            drawplayerlist: this.bound.drawPlayerList,
             promote: this.bound.promote,
             beforeunload: this.bound.leaveRoom,
             start: this.bound.startGame,
         }
-
-        state.leaveRoom = this.bound.leaveRoom
     }
 
-    async beforeLoad() {
+    async beforeLoad(roomId, uuid) {
+        this.roomId = roomId
+        this.uuid = uuid
+
+        this.roomClient = new RoomClient(uuid);
+        await this.roomClient.joinRoom(roomId, uuid)
 
     }
 
     async afterLoad() {
-        document.querySelector("h1").textContent = `Room ${this.state.roomId}`
+        document.querySelector("h1").textContent = `Room ${this.roomId}`
         const leave = document.getElementById("leave");
         leave.addEventListener("click", this.leaveRoom.bind(this));
 
@@ -39,23 +40,22 @@ export class RoomController {
     }
 
     async leaveRoom() {
-        await this.state.roomClient.leaveRoom()
-        delete this.state.leaveRoom
+        await this.roomClient.leaveRoom()
         this.isHost = false;
 
         for (const event in this.eventHandlers) {
             window.removeEventListener(event, this.eventHandlers[event])
         }
 
-        loadPage("rooms");
+        loadPage("rooms", this.uuid);
     }
 
     drawPlayerList() {
         const playerList = document.getElementById("playerList");
         playerList.innerHTML = "";
 
-        for (const uuid of this.state.players.keys()) {
-            const username = this.state.players.get(uuid)
+        for (const uuid of this.roomClient.players.keys()) {
+            const username = this.roomClient.players.get(uuid)
 
             const li = document.createElement("li");
             li.textContent = username;
@@ -63,10 +63,10 @@ export class RoomController {
             const kick = document.createElement("button");
             kick.textContent = "Kick";
             kick.addEventListener("click", async () => {
-                await this.state.roomClient.kickPlayer(uuid);
+                await this.roomClient.kickPlayer(uuid);
             });
 
-            if (this.isHost && uuid !== this.state.uuid) li.appendChild(kick);
+            if (this.isHost && uuid !== this.uuid) li.appendChild(kick);
             playerList.appendChild(li);
         }
     }
@@ -85,7 +85,7 @@ export class RoomController {
                 decks: document.getElementById("decks")
             }
 
-            const url = `/edit?roomId=${this.state.roomId}&players=${fields.numPlayers.value}&bots=${fields.numBots.value}&decks=${fields.decks.value}`
+            const url = `/edit?roomId=${this.roomId}&players=${fields.numPlayers.value}&bots=${fields.numBots.value}&decks=${fields.decks.value}`
             const actual = await fetch(url, { method: "PUT" }).then(res => res.json());
 
             for (const name in fields) {
@@ -95,11 +95,11 @@ export class RoomController {
         });
 
         document.getElementById("start").addEventListener("click", async (e) => {
-            this.state.roomClient.startGame()
+            this.roomClient.startGame()
         })
     }
 
     startGame() {
-        loadPage("game")
+        loadPage("game", this.uuid, this.roomClient.gameClient, this.roomClient.bound.leaveRoom)
     }
 }

@@ -46,6 +46,8 @@ export class GameServer {
         for (const uuid of this.gameCtx.players.keys()) {
             this.send(this.sockets.get(uuid), "deal", this.gameCtx.getPlayer(uuid).hand.toArray())
         }
+
+        this.publish("nextturn", this.gameCtx.currentPlayerId)
     }
 
     playCard(cardType, uuid) {

@@ -3,21 +3,18 @@ import { RoomsController } from "./RoomsController.js";
 import { RoomController } from "./RoomController.js";
 import { GameController } from "./GameController.js";
 
-const state = {}
-window.state = state
-
 const controllers = {
-    home: new HomeController(state),
-    rooms: new RoomsController(state),
-    room: new RoomController(state),
-    game: new GameController(state),
+    home: new HomeController(),
+    rooms: new RoomsController(),
+    room: new RoomController(),
+    game: new GameController(),
 }
 
 const app = document.getElementById("app")
 
-export async function loadPage(page) {
+export async function loadPage(page, ...args) {
     try {
-        await controllers[page].beforeLoad();
+        await controllers[page].beforeLoad(...args);
 
         const res = await fetch(`/resources/pages/${page}.html`);
         if (!res.ok) throw new Error(`Failed to load page: ${res.statusText}`);

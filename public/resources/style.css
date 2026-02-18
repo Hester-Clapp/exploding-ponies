@@ -139,12 +139,23 @@ output {
     background: #eee;
     box-shadow: 2px 4px 6px rgba(0, 0, 0, 0.5);
 
+    transition: filter 0.5s;
+
     img {
         border-radius: 1rem;
         width: 5rem;
         height: 8rem;
         margin: 0.5rem;
     }
+}
+
+.card.disabled {
+    filter: brightness(-0.5);
+}
+
+.card.enabled {
+    filter: brightness(-0.5);
+    cursor: pointer;
 }
 
 #deck {

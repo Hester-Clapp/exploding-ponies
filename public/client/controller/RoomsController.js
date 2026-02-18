@@ -1,16 +1,13 @@
-import { RoomClient } from '../service/RoomClient.js';
 import { SocketMessage } from '../../common/SocketMessage.js';
 import { loadPage } from './pageLoader.js';
 
 export class RoomsController {
-    constructor(state) {
-        this.state = state
-        state.roomClient = new RoomClient(state);
-        state.rooms = new Map()
+    constructor() {
+        this.rooms = new Map()
     }
 
-    async beforeLoad() {
-
+    async beforeLoad(uuid) {
+        this.uuid = uuid
     }
 
     async afterLoad() {
@@ -23,19 +20,19 @@ export class RoomsController {
         switch (type) {
             case "init":
                 // payload = array of rooms
-                this.state.rooms.clear()
+                this.rooms.clear()
                 for (const room of payload.rooms) {
-                    this.state.rooms.set(room.roomId, room)
+                    this.rooms.set(room.roomId, room)
                 }
                 break;
             case "create":
             case "edit":
                 // payload = room
-                this.state.rooms.set(payload.roomId, payload)
+                this.rooms.set(payload.roomId, payload)
                 break;
             case "close":
                 // payload = room id
-                this.state.rooms.delete(payload)
+                this.rooms.delete(payload)
                 break;
         }
 
@@ -57,14 +54,14 @@ export class RoomsController {
         container.appendChild(createDiv);
 
         // Available rooms
-        if (this.state.rooms.size === 0) {
+        if (this.rooms.size === 0) {
             const noRooms = document.createElement("p");
             noRooms.textContent = "No active rooms. Create one!";
             createDiv.appendChild(noRooms);
             return;
         }
 
-        for (const room of this.state.rooms.values()) {
+        for (const room of this.rooms.values()) {
             const div = document.createElement("div");
             div.classList.add("room");
 
@@ -93,9 +90,7 @@ export class RoomsController {
 
     async joinRoom(roomId) {
         try {
-            this.state.roomId = roomId
-            await loadPage("room");
-            this.state.socket = await this.state.roomClient.joinRoom(roomId, this.state.uuid);
+            await loadPage("room", roomId, this.uuid);
         } catch (error) {
             alert(`Failed to join room: ${error.message}`);
         }

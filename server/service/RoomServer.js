@@ -137,7 +137,6 @@ export class RoomServer {
         this.gameServer = new GameServer(this.getPlayers(), this.sockets, this.decks);
         this.gameServer.allReady().then(() => {
             this.gameServer.deal();
-            // this.gameServer.advanceTurn();
         })
     }
 

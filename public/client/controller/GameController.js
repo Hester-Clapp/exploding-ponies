@@ -1,11 +1,8 @@
 import { loadPage } from './pageLoader.js';
-import { GameClient } from '../service/GameClient.js';
 
 
 export class GameController {
-    constructor(state) {
-        this.state = state
-
+    constructor() {
         this.bound = {
             setStatus: this.setStatus.bind(this),
             drawHand: this.drawHand.bind(this),
@@ -20,13 +17,13 @@ export class GameController {
         }
     }
 
-    async beforeLoad() {
-
+    async beforeLoad(uuid, gameClient, onLeaveRoom) {
+        this.uuid = uuid
+        this.gameClient = gameClient
+        this.onLeaveRoom = onLeaveRoom
     }
 
     async afterLoad() {
-        this.state.gameClient = new GameClient(this.state)
-
         const leave = document.getElementById("leave");
         leave.addEventListener("click", this.leaveRoom.bind(this));
 
@@ -34,36 +31,37 @@ export class GameController {
             window.addEventListener(event, this.eventHandlers[event])
         }
 
-        this.state.roomClient.send("ready", null)
+        this.gameClient.send("ready", null)
 
-        this.drawPlayerList();
-        // this.drawHand();
-
+        this.drawPlayerList({ detail: this.gameClient.players });
     }
 
-    drawPlayerList() {
+    drawPlayerList(event) {
+        const players = event.detail
         const playersDisplay = document.getElementById("otherPlayers");
         playersDisplay.innerHTML = "";
 
-        for (const uuid of this.state.players.keys()) {
-            const player = this.state.players.get(uuid)
+        for (const uuid of players.keys()) {
+            const player = players.get(uuid)
 
             const div = document.createElement("div");
-            div.textContent = player.username;
+            div.className = "player"
+            div.textContent = player;
 
             playersDisplay.appendChild(div);
         }
     }
 
-    drawHand() {
+    drawHand(event) {
+        const hand = event.detail
         const handDisplay = document.getElementById("hand");
         handDisplay.innerHTML = "";
 
-        for (const card of this.state.hand.toArray()) {
+        for (const card of hand) {
             const cardDiv = this.cardToHTML(card)
             handDisplay.appendChild(cardDiv);
             cardDiv.addEventListener("click", () => {
-                this.state.roomClient.send("playcard", card)
+                this.gameClient.send("playcard", card)
                 cardDiv.remove()
             })
         }
@@ -79,6 +77,13 @@ export class GameController {
     cardToHTML(card) {
         const div = document.createElement("div")
         div.classList.add("card")
+        div.title = `Play ${card.cardType} card`
+
+        window.addEventListener("nextturn", (event) => {
+            const myTurn = event.detail
+            div.classList.toggle("enabled", myTurn)
+            div.classList.toggle("disabled", !myTurn)
+        })
 
         const img = document.createElement("img")
         img.src = "resources/images/" + card.cardType + ".png"
@@ -94,15 +99,13 @@ export class GameController {
     }
 
     async leaveRoom() {
-        await this.state.roomClient.leaveRoom()
-        delete this.state.roomId
-        delete this.state.leaveRoom
+        await this.onLeaveRoom()
         this.isHost = false;
 
         for (const event in this.eventHandlers) {
             window.removeEventListener(event, this.eventHandlers[event])
         }
 
-        loadPage("rooms", this.state.uuid);
+        loadPage("rooms", this.uuid);
     }
 }
