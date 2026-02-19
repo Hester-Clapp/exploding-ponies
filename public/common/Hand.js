@@ -6,6 +6,7 @@ export class Hand {
 
     add(card) {
         const cardType = card.cardType
+        console.log(cardType)
         if (this.cards.has(cardType)) {
             this.cards.get(cardType).push(card)
         } else {
@@ -15,6 +16,10 @@ export class Hand {
 
     has(cardType, number = 1) {
         return this.cards.has(cardType) && this.cards.get(cardType).length >= number
+    }
+
+    hasOnly(cardType, number = 1) {
+        return this.cards.has(cardType) && this.cards.get(cardType).length === number
     }
 
     get(cardType) {
@@ -29,6 +34,14 @@ export class Hand {
             this.cards.delete(cardType)
             return cards[0]
         } else return cards.shift()
+    }
+
+    toObject() {
+        const obj = {}
+        for (const [type, cards] of this.cards.entries()) {
+            obj[type] = cards
+        }
+        return obj
     }
 
     toArray() {

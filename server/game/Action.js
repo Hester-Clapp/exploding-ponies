@@ -53,12 +53,13 @@ export class DefuseAction extends Action {
     // changes = { deck: true }
     constructor() {
         super("defuse")
-        this.explosing = new Promise(resolve => this.setExploding = resolve)
+        this.exploding = new Promise(resolve => this.setExploding = resolve)
         this.position = new Promise(resolve => this.setPosition = resolve)
     }
 
     run(gameCtx) {
         gameCtx.deck.insert(this.exploding, this.position)
+        gameCtx.advanceTurn()
     }
 }
 
@@ -72,7 +73,7 @@ export class ExplodingAction extends Action {
     run(gameCtx) {
         const player = gameCtx.getPlayer()
         gameCtx.eliminatePlayer(player)
-        ganeCtx.advanceTurn()
+        gameCtx.advanceTurn()
         this.changes[player.uuid] = true
     }
 }

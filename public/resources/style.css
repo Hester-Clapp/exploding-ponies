@@ -31,13 +31,13 @@ a:hover {
 .flexbox {
     display: flex;
     flex-wrap: wrap;
-    gap: 15px;
+    gap: 0.5rem;
 }
 
 .room {
     border: 2px solid #999;
     background: #fff8e7;
-    padding: 15px;
+    padding: 0.5rem;
     width: 200px;
     border-radius: 6px;
     box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.15);
@@ -132,20 +132,27 @@ output {
 }
 
 .card {
+    position: relative;
     border-radius: 1rem;
-    width: 6rem;
-    height: 9rem;
-    /* border: 0.5rem solid #eee; */
+    width: 5.5rem;
+    height: 8.5rem;
+    outline: 0.25rem solid #eee;
+    border-width: 2px;
+    border-style: solid;
+    padding: 0.25rem;
+    margin: 0.5rem;
     background: #eee;
     box-shadow: 2px 4px 6px rgba(0, 0, 0, 0.5);
 
-    transition: filter 0.5s;
+    transform-origin: 50% 50%;
+
+    transition: filter 0.5s, left 0.5s, top 0.5s, transform 0.5s;
 
     img {
         border-radius: 1rem;
-        width: 5rem;
-        height: 8rem;
-        margin: 0.5rem;
+        width: 5.5rem;
+        height: 8.5rem;
+        /* margin: 0.25rem; */
     }
 }
 
@@ -153,12 +160,34 @@ output {
     filter: brightness(0.5);
 }
 
-.card.enabled {
+.card.enabled,
+#drawPile {
     cursor: pointer;
 }
 
 #deck {
     display: flex;
-    gap: 0.5rem;
+    gap: 1rem;
     margin-bottom: 4rem;
+}
+
+#discardPile {
+    display: relative;
+}
+
+#hand {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.cardGroup {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 8rem;
+
+    div {
+        position: relative;
+        margin-bottom: -7rem;
+    }
 }

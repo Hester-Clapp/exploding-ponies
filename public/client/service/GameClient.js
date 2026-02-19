@@ -6,6 +6,10 @@ export class GameClient {
         this.uuid = uuid
         this.players = players
         this.socket = socket
+
+        this.isMyTurn = false
+        this.lastTypePlayed = ""
+        this.lastTypeDrawn = ""
     }
 
     onMessage(type, payload) {
@@ -14,51 +18,60 @@ export class GameClient {
                 this.initialiseHand(payload)
                 break
             case "nextturn":
-                this.nextTurn(payload)
+                this.newTurn(payload)
                 break
             case "playcard":
                 console.log(payload)
-                this.lastCard = payload.card
+                this.lastTypePlayed = payload.card.cardType
                 this.dispatchEvent("playcard", payload.card)
             case "allownope":
                 this.configureCardPlayability(payload.allowNope)
                 break
+            case "drawcard":
+                this.takeCard(payload.card)
+                break
+
         }
     }
 
     initialiseHand(cards) {
         this.hand = new Hand(cards)
-        this.dispatchEvent("deal", cards)
+        this.dispatchEvent("deal", this.hand.toObject())
     }
 
-    nextTurn(uuid) {
+    newTurn(uuid) {
         this.currentPlayerId = uuid
-        const isMyTurn = this.currentPlayerId === this.uuid
+        this.isMyTurn = this.currentPlayerId === this.uuid
 
-        this.dispatchEvent("statusupdate", isMyTurn
+        this.dispatchEvent("statusupdate", this.isMyTurn
             ? "It's your turn!"
             : `It's ${this.getPlayer()}'s turn`)
 
         this.configureCardPlayability()
-
     }
 
     configureCardPlayability(allowNope = false) {
-        const isMyTurn = this.currentPlayerId === this.uuid
-        const lastCardType = this.lastCard?.cardType
+        const defaultPlayability = this.isMyTurn
+            && this.lastTypeDrawn !== "exploding"
+            && this.lastTypePlayed !== "exploding"
+
+        const catPlayability = (catType) => (this.hand.has(catType, 2)
+            || (this.hand.has(catType) && this.lastTypePlayed === catType))
+
         const playableCards = {
-            "attack": isMyTurn,
-            "cat1": isMyTurn,
-            "cat2": isMyTurn,
-            "cat3": isMyTurn,
-            "cat4": isMyTurn,
-            "cat5": isMyTurn,
-            "defuse": lastCardType === "exploding",
-            "favor": isMyTurn,
-            "future": isMyTurn,
-            "nope": allowNope && (!isMyTurn || lastCardType === "nope"),
-            "shuffle": isMyTurn,
-            "skip": isMyTurn,
+            attack: defaultPlayability,
+            cat1: defaultPlayability && catPlayability("cat1"),
+            cat2: defaultPlayability && catPlayability("cat2"),
+            cat3: defaultPlayability && catPlayability("cat3"),
+            cat4: defaultPlayability && catPlayability("cat4"),
+            cat5: defaultPlayability && catPlayability("cat5"),
+            defuse: this.isMyTurn && this.lastTypePlayed === "exploding",
+            exploding: this.lastTypeDrawn === "exploding",
+            favor: defaultPlayability,
+            future: defaultPlayability,
+            nope: allowNope && (!this.isMyTurn || this.lastTypePlayed === "nope"),
+            shuffle: defaultPlayability,
+            skip: defaultPlayability,
         }
         this.dispatchEvent("enablecard", playableCards)
     }
@@ -76,6 +89,28 @@ export class GameClient {
             ? (prompt(`Choose a number between 1 and ${cardsArray.length}\n${cardsArray.map((card, i) => `${i + 1}: ${card.type}`).join("\n")}`) - 1)
             : (prompt(`Choose a number between 1 and ${cardsArray.length}`) - 1)
         return cardsArray[index].cardId
+    }
+
+    playCard(card) {
+        this.send("playcard", card)
+        this.lastTypePlayed = card.cardType
+        if (card.cardType === "defuse") this.lastTypeDrawn = ""
+    }
+
+    drawCard() {
+        if (this.isMyTurn && this.lastTypeDrawn !== "exploding") {
+            this.send("drawcard")
+        }
+    }
+
+    takeCard(card) {
+        this.lastTypeDrawn = card.cardType
+        this.hand.add(card)
+        this.dispatchEvent("draw", card)
+
+        if (card.cardType === "exploding") {
+            this.configureCardPlayability(false)
+        }
     }
 
     getPlayer(uuid = this.currentPlayerId) {

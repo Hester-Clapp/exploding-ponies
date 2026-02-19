@@ -41,12 +41,16 @@ export class Card {
 }
 
 export class AttackCard extends Card {
+    color = "orange"
+
     constructor(index) {
         super(index, "attack")
     }
 }
 
 export class CatCard extends Card {
+    color = "lightgrey"
+
     constructor(index, catType) {
         super(index, "cat" + catType)
         this.cardId = "cat" + catType
@@ -58,42 +62,56 @@ export class CatCard extends Card {
 }
 
 export class DefuseCard extends Card {
+    color = "lime"
+
     constructor(index) {
         super(index, "defuse")
     }
 }
 
 export class ExplodingCard extends Card {
+    color = "darkgrey"
+
     constructor(index) {
         super(index, "exploding")
     }
 }
 
 export class FavorCard extends Card {
+    color = "darkgrey"
+
     constructor(index) {
         super(index, "favor")
     }
 }
 
 export class FutureCard extends Card {
+    color = "magenta"
+
     constructor(index) {
         super(index, "future")
     }
 }
 
 export class NopeCard extends Card {
+    color = "red"
+
     constructor(index) {
         super(index, "nope")
     }
 }
 
 export class ShuffleCard extends Card {
+    color = "tan"
+
     constructor(index) {
         super(index, "shuffle")
     }
 }
 
 export class SkipCard extends Card {
+    color = "blue"
+
     constructor(index) {
         super(index, "skip")
     }

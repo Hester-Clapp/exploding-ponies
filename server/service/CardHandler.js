@@ -24,7 +24,9 @@ export class CardHandler {
                         i++ // Nope doubles
                         if (nextNextCard.stacksOn(nextNextNextCard)) i++ // Nope triples
                     }
-                    i++;
+                    if (nextCard.cardType !== "exploding") { // Do not nope explosions
+                        i++;
+                    }
                     break;
                 case "defuse":
                     if (nextCard?.cardType === "exploding") i++

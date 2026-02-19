@@ -50,6 +50,32 @@ export class GameServer {
         this.publish("nextturn", this.gameCtx.currentPlayerId)
     }
 
+    advanceTurn() {
+        this.gameCtx.advanceTurn()
+        this.publish("nextturn", this.gameCtx.currentPlayerId)
+    }
+
+    drawCard(uuid) {
+        const hand = this.gameCtx.players.get(uuid).hand
+        const socket = this.sockets.get(uuid)
+
+        const card = this.gameCtx.deck.draw();
+        if (!card) return
+        hand.add(card)
+
+        this.send(socket, "drawcard", {
+            card,
+            hand: this.gameCtx.getPlayer(uuid).hand.toObject(),
+            probability: this.gameCtx.getExplodingProbability()
+        })
+
+        if (card.cardType === "exploding") {
+            this.cachedInputs.set("exploding", card)
+        } else {
+            this.advanceTurn()
+        }
+    }
+
     playCard(cardType, uuid) {
         console.log(cardType)
         const player = this.gameCtx.getPlayer(uuid)
@@ -107,7 +133,7 @@ export class GameServer {
 
         // Send changes
         for (const uuid of this.gameCtx.players.keys()) {
-            this.send(this.sockets.get(uuid), "hand", this.gameCtx.getPlayer(uuid).hand.toArray())
+            this.send(this.sockets.get(uuid), "hand", this.gameCtx.getPlayer(uuid).hand.toObject())
         }
         // if ("deck" in changes) this.publish("deck", { length: this.gameCtx.deck.cards.length })
         if ("draws" in changes) this.publish("draws", this.gameCtx.draws)

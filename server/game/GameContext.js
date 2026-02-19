@@ -67,14 +67,7 @@ export class GameContext {
 
     shuffle() { this.deck.shuffle() }
 
-    // async playCard(cardType, ...args) {
-    //     const player = this.getPlayer(uuid)
-    //     const card = player.hand.take(cardType)
-    //     if (card) {
-    //         if (card instanceof CatCard && player.hand.has(cardType, 2)) {
-
-    //         }
-    //         await card.play(this, ...args)
-    //     }
-    // }
+    getExplodingProbability() {
+        return (this.players.size - 1) / this.deck.cards.length
+    }
 }
