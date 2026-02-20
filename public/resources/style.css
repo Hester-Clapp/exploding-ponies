@@ -137,12 +137,33 @@ output {
     margin-left: 5px;
 }
 
-.hand {
-    height: 0;
-    margin-bottom: 4rem;
+#otherPlayers {
+    display: flex;
+    gap: 3rem;
+    flex-wrap: nowrap;
 
-    div {
-        margin-bottom: -100%;
+    div.player {
+        width: fit-content;
+    }
+
+    h3 {
+        width: 100%;
+        text-align: center;
+    }
+
+    .hand {
+        height: 0;
+        margin-bottom: 6rem;
+        margin-right: 2.5rem;
+        display: flex;
+
+        div {
+            margin-bottom: -100%;
+            margin-top: -25%;
+            margin-left: -1.5rem;
+            margin-right: -4rem;
+            transform: scale(0.5);
+        }
     }
 }
 
@@ -158,7 +179,6 @@ output {
     margin: 0.5rem;
     background: #eee;
     box-shadow: 2px 4px 6px rgba(0, 0, 0, 0.5);
-
     transform-origin: 50% 50%;
 
     transition: filter 0.5s, left 0.5s, top 0.5s, transform 0.5s;
@@ -167,7 +187,6 @@ output {
         border-radius: 1rem;
         width: 5.5rem;
         height: 8.5rem;
-        /* margin: 0.25rem; */
     }
 }
 

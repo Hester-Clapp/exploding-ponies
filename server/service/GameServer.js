@@ -57,15 +57,15 @@ export class GameServer {
 
     drawCard(uuid) {
         const hand = this.gameCtx.players.get(uuid).hand
-        const socket = this.sockets.get(uuid)
 
         const card = this.gameCtx.deck.draw();
         if (!card) return
         hand.add(card)
 
-        this.send(socket, "drawcard", {
+        this.publish("drawcard", {
             card,
-            hand: this.gameCtx.getPlayer(uuid).hand.toObject(),
+            uuid,
+            handSize: this.gameCtx.getPlayer(uuid).hand.toArray().length,
             probability: this.gameCtx.getExplodingProbability()
         })
 
@@ -77,7 +77,6 @@ export class GameServer {
     }
 
     playCard(cardType, uuid) {
-        console.log(cardType)
         const player = this.gameCtx.getPlayer(uuid)
         if (!player.hand.has(cardType)) return;
         const card = player.hand.take(cardType)

@@ -27,6 +27,9 @@ export async function loadPage(page, ...args) {
         await controllers[page].afterLoad()
     } catch (err) {
         console.error(err);
-        app.innerHTML = "<h1>Failed to load page</h1>";
+        app.innerHTML = `
+        <h1>Failed to load page</h1>
+        <p>${err.message}</p>
+        <ul>${err.stack.split("at ").map(line => `<li>at ${line}</li>`).join("")}</ul>`;
     }
 }   

@@ -6,7 +6,6 @@ export class Hand {
 
     add(card) {
         const cardType = card.cardType
-        console.log(cardType)
         if (this.cards.has(cardType)) {
             this.cards.get(cardType).push(card)
         } else {

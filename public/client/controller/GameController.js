@@ -47,18 +47,39 @@ export class GameController {
         playersDisplay.innerHTML = "";
 
         for (const uuid of players.keys()) {
+            if (uuid === this.uuid) continue
             const player = players.get(uuid)
 
             const div = document.createElement("div");
+            div.classList.add("player")
             div.classList.add(`player${uuid}`)
-            div.textContent = player;
+
+            const nameTag = document.createElement("h3")
+            nameTag.textContent = player;
+            div.appendChild(nameTag)
 
             const hand = document.createElement("div");
             hand.classList.add(`hand`)
-
             div.appendChild(hand)
+
             playersDisplay.appendChild(div);
+
+            this.initialisePlayerHand(uuid)
         }
+    }
+
+    initialisePlayerHand(uuid, length = 8) {
+        if (uuid === this.uuid) return
+        for (let i = 0; i < length; i++) {
+            this.addToPlayerHand(uuid)
+        }
+    }
+
+    addToPlayerHand(uuid) {
+        const hand = document.querySelector(`.player${uuid} .hand`)
+        const card = this.cardToHTML()
+        document.getElementById("drawPile").appendChild(card)
+        this.glide(card, hand, 0, 0.5)
     }
 
     renderHand(event) {
@@ -70,13 +91,14 @@ export class GameController {
             cardGroup.innerHTML = "";
 
             for (const card of hand[type]) {
-                const cardDiv = this.cardToHTML(card)
-                cardGroup.appendChild(cardDiv);
+                const cardDiv = this.cardToHTML(card, true)
+                document.getElementById("drawPile").appendChild(cardDiv);
+                this.glide(cardDiv, cardGroup)
             }
         }
     }
 
-    cardToHTML(card, functional = true) {
+    cardToHTML(card = { cardType: "back", color: "black" }, functional = false) {
         const div = document.createElement("div")
         div.classList.add("card")
         div.title = `Play ${card.cardType} card`
@@ -108,33 +130,38 @@ export class GameController {
         return div
     }
 
-    async glide(element, newParent, rotate = 0, offset = "0px") {
+    async glide(element, newParent, rotate = 0, scale = 1) {
         const startPosition = element.parentElement.getBoundingClientRect()
         const endPosition = newParent.getBoundingClientRect()
+        const offset = {
+            x: "0px",
+            y: newParent.classList.contains("cardGroup") ? `${element.children.length * 2.75}rem` :
+                newParent.classList.contains("hand") ? `-2.5rem` : "0px"
+        }
 
         const ghost = element.cloneNode(true)
         ghost.style.position = "fixed"
         ghost.style.left = `${startPosition.x}px`
         ghost.style.top = `${startPosition.y}px`
-        ghost.style.transform = `rotate(0deg)`
+        ghost.style.transform = `rotate(0deg) scale(1)`
         document.getElementById("app").appendChild(ghost)
 
         element.style.display = "none"
         newParent.appendChild(element)
 
         return new Promise(resolve => {
-            ghost.style.transition = `left 0.5s, top 0.5s, transform 0.5s`
-            ghost.addEventListener("transitionend", () => {
+            ghost.style.transition = `all 0.5s`
+            setTimeout(() => {
                 element.style.display = ghost.style.display
                 ghost.remove()
                 resolve()
-            })
+            }, 500)
 
             requestAnimationFrame(() => {
-                ghost.style.left = `${endPosition.x}px`
-                ghost.style.top = `calc(${endPosition.y}px + ${offset})`
-                ghost.style.transform = `rotate(${rotate}deg)`
-                element.style.transform = `rotate(${rotate}deg)`
+                ghost.style.left = `calc(${endPosition.x}px + ${offset.x})`
+                ghost.style.top = `calc(${endPosition.y}px + ${offset.y})`
+                ghost.style.transform = `rotate(${rotate}deg) scale(${scale})`
+                element.style.transform = `rotate(${rotate}deg) scale(${scale})`
             })
         })
     }
@@ -147,7 +174,7 @@ export class GameController {
 
     animateDiscard(element) {
         const angle = (Math.random() ** 2) * 20 - 10
-        this.glide(element, this.discardPile, angle)
+        this.glide(element, this.discardPile, angle, 1)
 
         element.style.position = "absolute"
         if (this.discardPile.children.length >= 5) this.discardPile.firstChild.remove()
@@ -155,7 +182,6 @@ export class GameController {
 
     animateCooldown() {
         const bar = this.cooldown.firstElementChild
-        console.log(this.cooldownTime)
 
         this.cooldown.style.opacity = "1"
         bar.style.transition = ""
@@ -177,21 +203,31 @@ export class GameController {
         const { card, uuid } = event.detail
         if (uuid === this.uuid) return
 
-        const element = this.cardToHTML(card, false)
-        document.querySelector(`#otherPlayers .player${uuid} .hand`).appendChild(element)
+        const element = this.cardToHTML(card)
+        // element.style.scale = "0.5"
+
+        const hand = document.querySelector(`#otherPlayers .player${uuid} .hand`)
+        hand.firstElementChild.remove()
+        hand.appendChild(element)
         window.requestAnimationFrame(() => this.animateDiscard(element))
 
         this.animateCooldown()
     }
 
     onDrawCard(event) {
-        const card = event.detail
-        const cardGroup = document.getElementById("hand").querySelector(`.cardGroup.${card.cardType}`)
+        const { card, uuid, handSize } = event.detail
+        console.log(uuid)
         const drawPile = document.getElementById("drawPile")
 
-        const cardDiv = this.cardToHTML(card)
-        drawPile.appendChild(cardDiv)
-        this.glide(cardDiv, cardGroup, 0, `${cardGroup.children.length * 2.75}rem`)
+        if (uuid === this.uuid) {
+            const cardGroup = document.getElementById("hand").querySelector(`.cardGroup.${card.cardType}`)
+
+            const cardDiv = this.cardToHTML(card, true)
+            drawPile.appendChild(cardDiv)
+            this.glide(cardDiv, cardGroup)
+        } else {
+            this.addToPlayerHand(uuid, handSize)
+        }
     }
 
     setStatus(event) {

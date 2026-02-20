@@ -28,7 +28,7 @@ export class Deck {
             hands.forEach(hand => hand.add(this.draw())) // Draw remaining cards
         }
 
-        for (let i = 1; i <= hands.length; i++) { // 1 less than the number of players
+        for (let i = 1; i < hands.length; i++) { // 1 less than the number of players
             this.cards.push(new ExplodingCard(i))
         }
 

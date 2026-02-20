@@ -21,14 +21,15 @@ export class GameClient {
                 this.newTurn(payload)
                 break
             case "playcard":
-                console.log(payload)
                 this.lastTypePlayed = payload.card.cardType
                 this.dispatchEvent("playcard", payload)
             case "allownope":
                 this.configureCardPlayability(payload.allowNope)
                 break
             case "drawcard":
-                this.takeCard(payload.card)
+                if (payload.uuid === this.uuid) this.takeCard(payload.card)
+                this.dispatchEvent("draw", payload)
+                this.configureCardPlayability(false)
                 break
 
         }
@@ -106,7 +107,6 @@ export class GameClient {
     takeCard(card) {
         this.lastTypeDrawn = card.cardType
         this.hand.add(card)
-        this.dispatchEvent("draw", card)
 
         if (card.cardType === "exploding") {
             this.configureCardPlayability(false)
