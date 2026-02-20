@@ -96,14 +96,13 @@ export class RoomController {
 
             this.cooldown = actual.cooldown
         });
-        document.querySelector("form").dispatchEvent(new CustomEvent("submit"))
 
         document.getElementById("start").addEventListener("click", async (e) => {
             this.roomClient.startGame()
         })
     }
 
-    startGame() {
-        loadPage("game", this.uuid, this.roomClient.gameClient, this.cooldown)
+    startGame(event) {
+        loadPage("game", this.uuid, this.roomClient.gameClient, event.detail.cooldown)
     }
 }

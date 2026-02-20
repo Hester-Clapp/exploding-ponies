@@ -14,6 +14,7 @@ export class RoomServer {
         this.totalCapacity = 4; // All players including bots
         this.playerCapacity = 4; // Only human players
         this.decks = 1;
+        this.cooldown = 3;
     }
 
     setCloseCallback(callback) {
@@ -90,19 +91,28 @@ export class RoomServer {
     onMessage(event) {
         const { sender, type, payload } = SocketMessage.fromEvent(event);
 
-        // Don't publish
-        if (type === "kick") return this.kick(payload.uuid, sender)
-        if (type === "ready") return this.gameServer.setPlayerReady(sender)
-        if (type === "cardinput") return this.gameServer.provideInput(payload.input, payload.value)
-        if (type === "playcard") return this.gameServer.playCard(payload.cardType, sender)
-        if (type === "drawcard") return this.gameServer.drawCard(sender)
-
-        // Do then publish
-        if (type === "start") this.startGameServer()
-
-        this.publish(type, payload);
-
-        // Publish then do
+        switch (type) {
+            case "kick":
+                this.kick(payload.uuid, sender)
+                break
+            case "ready":
+                this.gameServer.setPlayerReady(sender)
+                break
+            case "cardinput":
+                this.gameServer.provideInput(payload.input, payload.value)
+                break
+            case "playcard":
+                this.gameServer.playCard(payload.cardType, sender)
+                break
+            case "drawcard":
+                this.gameServer.drawCard(sender)
+                break
+            case "start":
+                this.startGameServer()
+                break
+            default:
+                this.publish(type, payload);
+        }
     }
 
     onClose(ws) {
@@ -140,6 +150,8 @@ export class RoomServer {
         this.gameServer.allReady().then(() => {
             this.gameServer.deal();
         })
+        console.log(this.expose())
+        this.publish("start", this.expose())
     }
 
     send(socket, type, payload, sender = socket.id) {

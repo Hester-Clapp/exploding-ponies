@@ -99,9 +99,9 @@ export class RoomClient {
         this.send("start")
     }
 
-    onStart() {
+    onStart(roomSettings) {
         this.gameClient = new GameClient(this.uuid, this.players, this.socket)
-        this.dispatchEvent("start")
+        this.dispatchEvent("start", roomSettings)
     }
 
     send(type, payload) {

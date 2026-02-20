@@ -23,7 +23,6 @@ export class GameController {
         this.uuid = uuid
         this.gameClient = gameClient
         this.cooldownTime = cooldownTime
-        console.log(cooldownTime)
     }
 
     async afterLoad() {
