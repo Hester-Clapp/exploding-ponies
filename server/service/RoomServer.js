@@ -29,10 +29,11 @@ export class RoomServer {
         this.playerCapacity = Math.min(Math.max(capacity, 1), this.totalCapacity);
     }
 
-    edit(players, bots, decks) {
+    edit(players, bots, decks, cooldown) {
         this.setTotalCapacity(players);
         this.setPlayerCapacity(players - bots);
         this.decks = decks;
+        this.cooldown = cooldown;
     }
 
     get isFull() {
@@ -135,7 +136,7 @@ export class RoomServer {
     }
 
     startGameServer() {
-        this.gameServer = new GameServer(this.getPlayers(), this.sockets, this.decks);
+        this.gameServer = new GameServer(this.getPlayers(), this.sockets, this.decks, this.cooldown);
         this.gameServer.allReady().then(() => {
             this.gameServer.deal();
         })
@@ -159,7 +160,8 @@ export class RoomServer {
             capacity: this.totalCapacity,
             numPlayers: this.sockets.size,
             numBots: this.totalCapacity - this.playerCapacity,
-            decks: this.decks
+            decks: this.decks,
+            cooldown: this.cooldown,
         }
     }
 }

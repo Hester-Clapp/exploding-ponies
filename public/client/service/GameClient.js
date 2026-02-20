@@ -23,7 +23,7 @@ export class GameClient {
             case "playcard":
                 console.log(payload)
                 this.lastTypePlayed = payload.card.cardType
-                this.dispatchEvent("playcard", payload.card)
+                this.dispatchEvent("playcard", payload)
             case "allownope":
                 this.configureCardPlayability(payload.allowNope)
                 break
@@ -114,7 +114,6 @@ export class GameClient {
     }
 
     getPlayer(uuid = this.currentPlayerId) {
-        console.log(this.players, uuid)
         return this.players.get(uuid)
     }
 

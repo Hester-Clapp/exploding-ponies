@@ -96,7 +96,7 @@ export class RoomClient {
     }
 
     startGame() {
-        this.send("start", {})
+        this.send("start")
     }
 
     onStart() {

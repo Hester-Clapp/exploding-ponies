@@ -64,10 +64,16 @@ form {
     border: 1px solid black;
     margin: 1rem;
     padding: 1rem;
-    width: fit-content;
+    width: max-content;
 
     div {
+        width: max-content;
         margin: 0.5rem 0;
+    }
+
+
+    label {
+        width: 20ch;
     }
 }
 
@@ -131,6 +137,15 @@ output {
     margin-left: 5px;
 }
 
+.hand {
+    height: 0;
+    margin-bottom: 4rem;
+
+    div {
+        margin-bottom: -100%;
+    }
+}
+
 .card {
     position: relative;
     border-radius: 1rem;
@@ -169,10 +184,26 @@ output {
     display: flex;
     gap: 1rem;
     margin-bottom: 4rem;
+
+    #cooldown {
+        height: 1rem;
+        width: 6.25rem;
+        padding: 0.25rem;
+        background: #eee;
+        border-radius: 0.25rem;
+        transition: opacity 0.25s;
+        opacity: 0;
+
+        div {
+            height: 1rem;
+            border-radius: 0.25rem;
+        }
+    }
 }
 
 #discardPile {
     display: relative;
+    height: 11rem;
 }
 
 #hand {

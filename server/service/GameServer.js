@@ -3,7 +3,7 @@ import { CardHandler } from './CardHandler.js'
 import { GameContext } from '../game/GameContext.js'
 
 export class GameServer {
-    constructor(players, sockets, numDecks = 1) {
+    constructor(players, sockets, numDecks = 1, cooldown = 3) {
 
         // Game
         this.gameCtx = new GameContext(numDecks)
@@ -13,7 +13,7 @@ export class GameServer {
         }
 
         this.cardHandler = new CardHandler()
-        this.nopeWindow = 3000
+        this.cooldown = cooldown
         this.resolveTimeoutId = undefined
 
         this.cachedInputs = new Map() // name => value
@@ -84,9 +84,9 @@ export class GameServer {
 
         this.cardHandler.enqueue(card)
         if (this.resolveTimeoutId) clearTimeout(this.resolveTimeoutId)
-        this.resolveTimeoutId = setTimeout(this.resolveActions.bind(this), this.nopeWindow)
+        this.resolveTimeoutId = setTimeout(this.resolveActions.bind(this), this.cooldown * 1000)
 
-        this.publish("playcard", { card, allowNope: true })
+        this.publish("playcard", { card, uuid, allowNope: true })
     }
 
     provideInput(input, value) {
@@ -132,12 +132,13 @@ export class GameServer {
         }
 
         // Send changes
+        // this.publish("draws", this.gameCtx.draws)
         for (const uuid of this.gameCtx.players.keys()) {
             this.send(this.sockets.get(uuid), "hand", this.gameCtx.getPlayer(uuid).hand.toObject())
         }
         // if ("deck" in changes) this.publish("deck", { length: this.gameCtx.deck.cards.length })
         if ("draws" in changes) this.publish("draws", this.gameCtx.draws)
-        if ("turn" in changes) this.publish("turn", this.gameCtx.currentPlayerId)
+        if ("turn" in changes) this.publish("nextturn", this.gameCtx.currentPlayerId)
     }
 
     send(socket, type, payload, sender = "") {

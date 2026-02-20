@@ -19,13 +19,16 @@ export class GameController {
         }
     }
 
-    async beforeLoad(uuid, gameClient) {
+    async beforeLoad(uuid, gameClient, cooldownTime) {
         this.uuid = uuid
         this.gameClient = gameClient
+        this.cooldownTime = cooldownTime
+        console.log(cooldownTime)
     }
 
     async afterLoad() {
         this.discardPile = document.getElementById("discardPile")
+        this.cooldown = document.getElementById("cooldown")
 
         const drawPile = document.getElementById("drawPile");
         drawPile.addEventListener("click", () => { this.gameClient.drawCard() })
@@ -48,9 +51,13 @@ export class GameController {
             const player = players.get(uuid)
 
             const div = document.createElement("div");
-            div.className = "player"
+            div.classList.add(`player${uuid}`)
             div.textContent = player;
 
+            const hand = document.createElement("div");
+            hand.classList.add(`hand`)
+
+            div.appendChild(hand)
             playersDisplay.appendChild(div);
         }
     }
@@ -102,7 +109,7 @@ export class GameController {
         return div
     }
 
-    async glide(element, newParent, rotate = 0, offset) {
+    async glide(element, newParent, rotate = 0, offset = "0px") {
         const startPosition = element.parentElement.getBoundingClientRect()
         const endPosition = newParent.getBoundingClientRect()
 
@@ -126,7 +133,7 @@ export class GameController {
 
             requestAnimationFrame(() => {
                 ghost.style.left = `${endPosition.x}px`
-                ghost.style.top = offset ? `calc(${endPosition.y}px + ${offset})` : `${endPosition.y}px`
+                ghost.style.top = `calc(${endPosition.y}px + ${offset})`
                 ghost.style.transform = `rotate(${rotate}deg)`
                 element.style.transform = `rotate(${rotate}deg)`
             })
@@ -135,7 +142,11 @@ export class GameController {
 
     playCard(card, element) {
         this.gameClient.playCard(card)
+        this.animateDiscard(element)
+        this.animateCooldown()
+    }
 
+    animateDiscard(element) {
         const angle = (Math.random() ** 2) * 20 - 10
         this.glide(element, this.discardPile, angle)
 
@@ -143,11 +154,35 @@ export class GameController {
         if (this.discardPile.children.length >= 5) this.discardPile.firstChild.remove()
     }
 
+    animateCooldown() {
+        const bar = this.cooldown.firstElementChild
+        console.log(this.cooldownTime)
+
+        this.cooldown.style.opacity = "1"
+        bar.style.transition = ""
+        bar.style.width = "100%"
+        bar.style.background = "blue"
+
+        window.requestAnimationFrame(() => {
+            bar.style.transition = `width ${this.cooldownTime}s linear, background-color ${this.cooldownTime}s linear`
+            bar.style.width = "0"
+            bar.style.background = "orange"
+
+            bar.addEventListener("transitionend", () => {
+                this.cooldown.style.opacity = "0"
+            }, { once: true })
+        })
+    }
+
     onPlayCard(event) {
-        // const card = event.detail
-        // const discardPile = document.getElementById("discardPile");
-        // discardPile.innerHTML = "";
-        // discardPile.appendChild(this.cardToHTML(card));
+        const { card, uuid } = event.detail
+        if (uuid === this.uuid) return
+
+        const element = this.cardToHTML(card, false)
+        document.querySelector(`#otherPlayers .player${uuid} .hand`).appendChild(element)
+        window.requestAnimationFrame(() => this.animateDiscard(element))
+
+        this.animateCooldown()
     }
 
     onDrawCard(event) {

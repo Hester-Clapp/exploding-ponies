@@ -57,8 +57,9 @@ async function handle(req) {
         const players = searchParams.get("players");
         const bots = searchParams.get("bots");
         const decks = searchParams.get("decks");
-        room.edit(Number(players), Number(bots), Number(decks));
-        return json({ numPlayers: room.totalCapacity, numBots: room.totalCapacity - room.playerCapacity, decks: room.decks });
+        const cooldown = searchParams.get("cooldown");
+        room.edit(Number(players), Number(bots), Number(decks), Number(cooldown));
+        return json({ numPlayers: room.totalCapacity, numBots: room.totalCapacity - room.playerCapacity, decks: room.decks, cooldown: room.cooldown });
     }
 
     // ---- Static files ----

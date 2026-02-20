@@ -82,17 +82,21 @@ export class RoomController {
             const fields = {
                 numPlayers: document.getElementById("numPlayers"),
                 numBots: document.getElementById("numBots"),
-                decks: document.getElementById("decks")
+                decks: document.getElementById("decks"),
+                cooldown: document.getElementById("cooldown"),
             }
 
-            const url = `/edit?roomId=${this.roomId}&players=${fields.numPlayers.value}&bots=${fields.numBots.value}&decks=${fields.decks.value}`
+            const url = `/edit?roomId=${this.roomId}&players=${fields.numPlayers.value}&bots=${fields.numBots.value}&decks=${fields.decks.value}&cooldown=${fields.cooldown.value}`
             const actual = await fetch(url, { method: "PUT" }).then(res => res.json());
 
             for (const name in fields) {
                 fields[name].value = actual[name]
                 fields[name].nextElementSibling.textContent = actual[name]
             }
+
+            this.cooldown = actual.cooldown
         });
+        document.querySelector("form").dispatchEvent(new CustomEvent("submit"))
 
         document.getElementById("start").addEventListener("click", async (e) => {
             this.roomClient.startGame()
@@ -100,6 +104,6 @@ export class RoomController {
     }
 
     startGame() {
-        loadPage("game", this.uuid, this.roomClient.gameClient, this.roomClient.bound.leaveRoom)
+        loadPage("game", this.uuid, this.roomClient.gameClient, this.cooldown)
     }
 }
