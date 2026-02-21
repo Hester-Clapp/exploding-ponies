@@ -4,6 +4,14 @@ export class Hand {
         cards.forEach(card => this.add(card))
     }
 
+    get size() {
+        let count = 0
+        for (const group of this.cards.values()) {
+            count += group.length
+        }
+        return count
+    }
+
     add(card) {
         const cardType = card.cardType
         if (this.cards.has(cardType)) {

@@ -88,13 +88,52 @@ export class GameServer {
         this.publish("playcard", { card, uuid, allowNope: true })
     }
 
+    requestInput(type, uuid) {
+        const socket = this.sockets.get(uuid)
+        switch (type) {
+            case "cat1":
+            case "cat2":
+            case "cat3":
+            case "cat4":
+            case "cat5":
+                const cards = this.gameCtx.getPlayer(uuid).hand.toArray()
+                const index = Math.floor(Math.random() * cards.length)
+                const value = cards[index].cardType
+                this.provideInput("cardType", value)
+                break
+            case "favor":
+                this.send(socket, "requestinput", { input: "cardType" })
+                break
+        }
+    }
+
     provideInput(input, value) {
+        if (input === "target") {
+            // const card = this.cardHandler.lastCard
+            // this.requestInput(card.cardType, value)
+
+            const socket = this.sockets.get(value)
+            this.send(socket, "requestinput", { input: "cardType" })
+        }
+
+        if (input === "cardType" && value === null) {
+            const target = this.cachedInputs.get("target")
+            if (!target) return
+            const cards = this.gameCtx.getPlayer(target).hand.toArray()
+            const index = Math.floor(Math.random() * cards.length)
+            value = cards[index].cardType
+        }
+
+        console.log(input, value)
+
         if (this.pendingInputs.has(input)) {
             const action = this.pendingInputs.get(input)
             action.provideInput(input, value)
             this.pendingInputs.delete(input)
         }
         this.cachedInputs.set(input, value)
+
+        console.log(this.cachedInputs, this.pendingInputs)
     }
 
     resolveActions() {
@@ -106,6 +145,7 @@ export class GameServer {
             for (const input in action.inputs) {
                 if (this.cachedInputs.has(input)) {
                     action.provideInput(input, this.cachedInputs.get(input))
+                    console.log(action)
                 } else {
                     this.pendingInputs.set(input, action)
                 }
@@ -119,14 +159,16 @@ export class GameServer {
         Promise.all(inputPromises).then(() => this.playActions(actions))
     }
 
-    playActions(actions) {
+    async playActions(actions) {
+        console.log(this.gameCtx.players)
+
         console.log("playing", actions)
         this.cachedInputs.clear()
         this.pendingInputs.clear()
 
         const changes = {}
         for (const action of actions) {
-            action.run(this.gameCtx)
+            await action.run(this.gameCtx)
             Object.assign(changes, action.changes)
         }
 
@@ -138,6 +180,7 @@ export class GameServer {
         // if ("deck" in changes) this.publish("deck", { length: this.gameCtx.deck.cards.length })
         if ("draws" in changes) this.publish("draws", this.gameCtx.draws)
         if ("turn" in changes) this.publish("nextturn", this.gameCtx.currentPlayerId)
+        console.log(this.gameCtx.players)
     }
 
     send(socket, type, payload, sender = "") {

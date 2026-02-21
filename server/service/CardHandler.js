@@ -10,6 +10,10 @@ export class CardHandler {
         this.queue.unshift(card)
     }
 
+    get lastCard() {
+        return this.queue[0]
+    }
+
     resolve() {
         const actions = []
         this.changes = {}
@@ -24,9 +28,7 @@ export class CardHandler {
                         i++ // Nope doubles
                         if (nextNextCard.stacksOn(nextNextNextCard)) i++ // Nope triples
                     }
-                    if (nextCard.cardType !== "exploding") { // Do not nope explosions
-                        i++;
-                    }
+                    if (nextCard.cardType !== "exploding") i++; // Do not nope explosions
                     break;
                 case "defuse":
                     if (nextCard?.cardType === "exploding") i++

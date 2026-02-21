@@ -8,6 +8,7 @@ export class GameController {
             renderHand: this.renderHand.bind(this),
             onPlayCard: this.onPlayCard.bind(this),
             onDrawCard: this.onDrawCard.bind(this),
+            onRequestInput: this.onRequestInput.bind(this),
         }
 
         this.eventHandlers = {
@@ -16,6 +17,7 @@ export class GameController {
             hand: this.bound.renderHand,
             draw: this.bound.onDrawCard,
             playcard: this.bound.onPlayCard,
+            requestinput: this.bound.onRequestInput,
         }
     }
 
@@ -41,6 +43,7 @@ export class GameController {
         this.renderPlayerList({ detail: this.gameClient.players });
     }
 
+    // Rendering
     renderPlayerList(event) {
         const players = event.detail
         const playersDisplay = document.getElementById("otherPlayers");
@@ -130,6 +133,7 @@ export class GameController {
         return div
     }
 
+    // Animations
     async glide(element, newParent, rotate = 0, scale = 1) {
         const startPosition = element.parentElement.getBoundingClientRect()
         const endPosition = newParent.getBoundingClientRect()
@@ -166,12 +170,6 @@ export class GameController {
         })
     }
 
-    playCard(card, element) {
-        this.gameClient.playCard(card)
-        this.animateDiscard(element)
-        this.animateCooldown()
-    }
-
     animateDiscard(element) {
         const angle = (Math.random() ** 2) * 20 - 10
         this.glide(element, this.discardPile, angle, 1)
@@ -199,6 +197,50 @@ export class GameController {
         })
     }
 
+    // Actions
+    playCard(card, element) {
+        this.gameClient.playCard(card)
+        this.animateDiscard(element)
+        this.animateCooldown()
+    }
+
+    async choosePlayer(players) {
+        return new Promise(resolve => {
+            this.setStatus({ detail: "Choose a player to target" })
+            console.log(players)
+            players.forEach(uuid => {
+                if (uuid === this.uuid) return
+                const element = document.querySelector(`.player${uuid}`)
+                console.log(uuid, element)
+                element.style.cursor = "pointer"
+
+                element.addEventListener("click", () => {
+                    element.style.cursor = "auto"
+                    this.setStatus({ detail: "It's your turn! (draw a card to end it)" })
+                    resolve(uuid)
+                }, { once: true })
+            })
+        })
+    }
+
+    async chooseCard() {
+        return new Promise(resolve => {
+            this.setStatus({ detail: "Choose a card to give" })
+            document.querySelectorAll(".cardGroup").forEach(element => {
+                const type = element.className.split(" ")[0]
+
+                element.style.cursor = "pointer"
+
+                element.addEventListener("click", () => {
+                    element.style.cursor = "auto"
+                    // this.setStatus({ detail: "It's your turn! (draw a card to end it)" })
+                    resolve(type)
+                }, { once: true })
+            })
+        })
+    }
+
+    // Reactions
     onPlayCard(event) {
         const { card, uuid } = event.detail
         if (uuid === this.uuid) return
@@ -214,9 +256,22 @@ export class GameController {
         this.animateCooldown()
     }
 
+    onRequestInput(event) {
+        const { input, players } = event.detail
+        switch (input) {
+            case "target":
+                this.choosePlayer(Array.from(players.keys()))
+                    .then(target => this.gameClient.provideInput({ target }))
+                break
+            case "cardType":
+                this.chooseCard()
+                    .then(cardType => this.gameClient.provideInput({ cardType }))
+                break
+        }
+    }
+
     onDrawCard(event) {
         const { card, uuid, handSize } = event.detail
-        console.log(uuid)
         const drawPile = document.getElementById("drawPile")
 
         if (uuid === this.uuid) {
@@ -233,16 +288,5 @@ export class GameController {
     setStatus(event) {
         console.log(event.detail)
         document.getElementById("status").textContent = event.detail;
-    }
-
-    async leaveRoom() {
-        await this.onLeaveRoom()
-        this.isHost = false;
-
-        for (const event in this.eventHandlers) {
-            window.removeEventListener(event, this.eventHandlers[event])
-        }
-
-        loadPage("rooms", this.uuid);
     }
 }

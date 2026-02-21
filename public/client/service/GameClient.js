@@ -21,17 +21,20 @@ export class GameClient {
                 this.newTurn(payload)
                 break
             case "playcard":
+                // this.requestInput(payload.card.cardType, payload.uuid)
                 this.lastTypePlayed = payload.card.cardType
                 this.dispatchEvent("playcard", payload)
             case "allownope":
                 this.configureCardPlayability(payload.allowNope)
+                break
+            case "requestinput":
+                this.requestInput(payload.input)
                 break
             case "drawcard":
                 if (payload.uuid === this.uuid) this.takeCard(payload.card)
                 this.dispatchEvent("draw", payload)
                 this.configureCardPlayability(false)
                 break
-
         }
     }
 
@@ -77,25 +80,29 @@ export class GameClient {
         this.dispatchEvent("enablecard", playableCards)
     }
 
-    async choosePlayer() {
-        const playersArray = Array.from(this.players.keys())
-        const index = prompt(`Choose a number between 1 and : ${playersArray.length}\n${playersArray.map((id, i) => `${i + 1}: ${this.getPlayer(id).username}`).join("\n")}`) - 1
-        return playersArray[index]
-    }
-
-    async chooseCard(target) {
-        const hand = target.hand
-        const cardsArray = (target.uuid === this.uuid) ? hand.toArray() : hand.toShuffledArray()
-        const index = (target.uuid === this.uuid)
-            ? (prompt(`Choose a number between 1 and ${cardsArray.length}\n${cardsArray.map((card, i) => `${i + 1}: ${card.type}`).join("\n")}`) - 1)
-            : (prompt(`Choose a number between 1 and ${cardsArray.length}`) - 1)
-        return cardsArray[index].cardId
-    }
-
     playCard(card) {
         this.send("playcard", card)
+        switch (card.cardType) {
+            case "cat1":
+            case "cat2":
+            case "cat3":
+            case "cat4":
+            case "cat5":
+                console.log(this.lastTypePlayed, card.cardType)
+                if (this.lastTypePlayed !== card.cardType) break // Only ask for input after the second cat
+            case "favor":
+                this.dispatchEvent("requestinput", { input: "target", players: this.players })
+                break
+            case "defuse":
+                this.dispatchEvent("requestinput", { input: "insertPosition", players: this.players })
+                break
+        }
         this.lastTypePlayed = card.cardType
         if (card.cardType === "defuse") this.lastTypeDrawn = ""
+    }
+
+    provideInput(payload) {
+        this.send("provideinput", payload)
     }
 
     drawCard() {
@@ -110,6 +117,17 @@ export class GameClient {
 
         if (card.cardType === "exploding") {
             this.configureCardPlayability(false)
+        }
+    }
+
+    requestInput(cardType) {
+        console.log("Requesting input for", cardType)
+        switch (cardType) {
+            case "favor":
+                this.dispatchEvent("requestinput", "cardType")
+                break
+            default:
+                this.send("provideinput", { cardType: null })
         }
     }
 

@@ -98,11 +98,11 @@ export class RoomServer {
             case "ready":
                 this.gameServer.setPlayerReady(sender)
                 break
-            case "cardinput":
-                this.gameServer.provideInput(payload.input, payload.value)
-                break
             case "playcard":
                 this.gameServer.playCard(payload.cardType, sender)
+                break
+            case "provideinput":
+                for (const input in payload) this.gameServer.provideInput(input, payload[input])
                 break
             case "drawcard":
                 this.gameServer.drawCard(sender)
@@ -150,7 +150,6 @@ export class RoomServer {
         this.gameServer.allReady().then(() => {
             this.gameServer.deal();
         })
-        console.log(this.expose())
         this.publish("start", this.expose())
     }
 
