@@ -55,6 +55,10 @@ export class Hand {
         return Array.from(this.cards.values()).flat()
     }
 
+    get types() {
+        return Array.from(this.cards.keys())
+    }
+
     toShuffledArray() {
         const array = this.toArray()
         for (let i = array.length - 1; i > 0; i--) {

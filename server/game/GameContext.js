@@ -58,9 +58,10 @@ export class GameContext {
     discard() { return this.deck.discard() }
 
     transferCard(from, to, cardType) {
-        if (!from.hand.has(cardType)) return;
+        if (!from.hand.has(cardType)) return null;
         const card = from.hand.take(cardType)
         to.hand.add(card)
+        return card
     }
 
     seeFuture() { return this.deck.seeFuture() }

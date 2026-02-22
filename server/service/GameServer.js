@@ -44,15 +44,15 @@ export class GameServer {
                 .map(player => player.hand)
         )
         for (const uuid of this.gameCtx.players.keys()) {
-            this.send(this.sockets.get(uuid), "deal", this.gameCtx.getPlayer(uuid).hand.toArray())
+            this.send(uuid, "deal", this.gameCtx.getPlayer(uuid).hand.toArray())
         }
 
-        this.publish("nextturn", this.gameCtx.currentPlayerId)
+        this.publish("nextturn", { uuid: this.gameCtx.currentPlayerId })
     }
 
     advanceTurn() {
         this.gameCtx.advanceTurn()
-        this.publish("nextturn", this.gameCtx.currentPlayerId)
+        this.publish("nextturn", { uuid: this.gameCtx.currentPlayerId })
     }
 
     drawCard(uuid) {
@@ -81,6 +81,7 @@ export class GameServer {
         if (!player.hand.has(cardType)) return;
         const card = player.hand.take(cardType)
 
+        this.gameCtx.deck.discard(card)
         this.cardHandler.enqueue(card)
         if (this.resolveTimeoutId) clearTimeout(this.resolveTimeoutId)
         this.resolveTimeoutId = setTimeout(this.resolveActions.bind(this), this.cooldown * 1000)
@@ -88,43 +89,17 @@ export class GameServer {
         this.publish("playcard", { card, uuid, allowNope: true })
     }
 
-    requestInput(type, uuid) {
-        const socket = this.sockets.get(uuid)
-        switch (type) {
-            case "cat1":
-            case "cat2":
-            case "cat3":
-            case "cat4":
-            case "cat5":
-                const cards = this.gameCtx.getPlayer(uuid).hand.toArray()
-                const index = Math.floor(Math.random() * cards.length)
-                const value = cards[index].cardType
-                this.provideInput("cardType", value)
-                break
-            case "favor":
-                this.send(socket, "requestinput", { input: "cardType" })
-                break
-        }
-    }
-
     provideInput(input, value) {
         if (input === "target") {
-            // const card = this.cardHandler.lastCard
-            // this.requestInput(card.cardType, value)
-
-            const socket = this.sockets.get(value)
-            this.send(socket, "requestinput", { input: "cardType" })
+            if (this.gameCtx.deck.lastTypePlayed === "favor") {
+                const types = this.gameCtx.getPlayer(value).hand.types
+                this.send(value, "requestinput", { input: "cardType", types })
+            } else {
+                const cards = this.gameCtx.getPlayer(value).hand.toArray()
+                const index = Math.floor(Math.random() * cards.length)
+                this.provideInput("cardType", cards[index].cardType)
+            }
         }
-
-        if (input === "cardType" && value === null) {
-            const target = this.cachedInputs.get("target")
-            if (!target) return
-            const cards = this.gameCtx.getPlayer(target).hand.toArray()
-            const index = Math.floor(Math.random() * cards.length)
-            value = cards[index].cardType
-        }
-
-        console.log(input, value)
 
         if (this.pendingInputs.has(input)) {
             const action = this.pendingInputs.get(input)
@@ -132,8 +107,6 @@ export class GameServer {
             this.pendingInputs.delete(input)
         }
         this.cachedInputs.set(input, value)
-
-        console.log(this.cachedInputs, this.pendingInputs)
     }
 
     resolveActions() {
@@ -145,7 +118,6 @@ export class GameServer {
             for (const input in action.inputs) {
                 if (this.cachedInputs.has(input)) {
                     action.provideInput(input, this.cachedInputs.get(input))
-                    console.log(action)
                 } else {
                     this.pendingInputs.set(input, action)
                 }
@@ -160,8 +132,6 @@ export class GameServer {
     }
 
     async playActions(actions) {
-        console.log(this.gameCtx.players)
-
         console.log("playing", actions)
         this.cachedInputs.clear()
         this.pendingInputs.clear()
@@ -175,22 +145,23 @@ export class GameServer {
         // Send changes
         // this.publish("draws", this.gameCtx.draws)
         for (const uuid of this.gameCtx.players.keys()) {
-            this.send(this.sockets.get(uuid), "hand", this.gameCtx.getPlayer(uuid).hand.toObject())
+            for (const change in changes[uuid]) {
+                this.send(uuid, change, changes[uuid][change])
+            }
         }
         // if ("deck" in changes) this.publish("deck", { length: this.gameCtx.deck.cards.length })
         if ("draws" in changes) this.publish("draws", this.gameCtx.draws)
-        if ("turn" in changes) this.publish("nextturn", this.gameCtx.currentPlayerId)
-        console.log(this.gameCtx.players)
+        if ("turn" in changes) this.publish("nextturn", { uuid: this.gameCtx.currentPlayerId })
     }
 
-    send(socket, type, payload, sender = "") {
-        new SocketMessage(sender, type, payload).send(socket);
+    send(uuid, type, payload, sender = "") {
+        new SocketMessage(sender, type, payload).send(this.sockets.get(uuid));
     }
 
     publish(type, payload, sender = null) {
-        for (const [id, socket] of this.sockets) {
-            if (!sender || id !== sender) {
-                this.send(socket, type, payload);
+        for (const uuid of this.sockets.keys()) {
+            if (!sender || uuid !== sender) {
+                this.send(uuid, type, payload);
             }
         }
     }

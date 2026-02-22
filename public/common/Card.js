@@ -42,6 +42,7 @@ export class Card {
 
 export class AttackCard extends Card {
     color = "orange"
+    name = "Attack"
 
     constructor(index) {
         super(index, "attack")
@@ -54,6 +55,8 @@ export class CatCard extends Card {
     constructor(index, catType) {
         super(index, "cat" + catType)
         this.cardId = "cat" + catType
+        const names = ["Lyra Heartstrings", "Bon Bon", "Derpy", "Doctor Whooves", "DJ Pon-3"]
+        this.name = names[catType - 1]
     }
 
     stacksOn(that) {
@@ -63,6 +66,7 @@ export class CatCard extends Card {
 
 export class DefuseCard extends Card {
     color = "lime"
+    name = "Element of Harmony"
 
     constructor(index) {
         super(index, "defuse")
@@ -71,6 +75,7 @@ export class DefuseCard extends Card {
 
 export class ExplodingCard extends Card {
     color = "darkgrey"
+    name = "Villain"
 
     constructor(index) {
         super(index, "exploding")
@@ -79,6 +84,7 @@ export class ExplodingCard extends Card {
 
 export class FavorCard extends Card {
     color = "darkgrey"
+    name = "Favor"
 
     constructor(index) {
         super(index, "favor")
@@ -87,6 +93,7 @@ export class FavorCard extends Card {
 
 export class FutureCard extends Card {
     color = "magenta"
+    name = "See The Future"
 
     constructor(index) {
         super(index, "future")
@@ -95,6 +102,7 @@ export class FutureCard extends Card {
 
 export class NopeCard extends Card {
     color = "red"
+    name = "Nope"
 
     constructor(index) {
         super(index, "nope")
@@ -103,6 +111,7 @@ export class NopeCard extends Card {
 
 export class ShuffleCard extends Card {
     color = "tan"
+    name = "Shuffle"
 
     constructor(index) {
         super(index, "shuffle")
@@ -111,6 +120,7 @@ export class ShuffleCard extends Card {
 
 export class SkipCard extends Card {
     color = "blue"
+    name = "Skip"
 
     constructor(index) {
         super(index, "skip")

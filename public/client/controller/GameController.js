@@ -4,20 +4,25 @@ import { loadPage } from './pageLoader.js';
 export class GameController {
     constructor() {
         this.bound = {
-            setStatus: this.setStatus.bind(this),
+            onNewTurn: this.onNewTurn.bind(this),
             renderHand: this.renderHand.bind(this),
             onPlayCard: this.onPlayCard.bind(this),
-            onDrawCard: this.onDrawCard.bind(this),
             onRequestInput: this.onRequestInput.bind(this),
+            showFuture: this.showFuture.bind(this),
+            giveCard: this.giveCard.bind(this),
+            receiveCard: this.receiveCard.bind(this),
+            onDrawCard: this.onDrawCard.bind(this),
         }
 
         this.eventHandlers = {
-            statusupdate: this.bound.setStatus,
+            newturn: this.bound.onNewTurn,
             deal: this.bound.renderHand,
-            hand: this.bound.renderHand,
-            draw: this.bound.onDrawCard,
             playcard: this.bound.onPlayCard,
             requestinput: this.bound.onRequestInput,
+            show: this.bound.showFuture,
+            give: this.bound.giveCard,
+            receive: this.bound.receiveCard,
+            draw: this.bound.onDrawCard,
         }
     }
 
@@ -133,6 +138,172 @@ export class GameController {
         return div
     }
 
+    // Actions
+    playCard(card, element) {
+        this.setPlayStatus(`You played ${card.name}`)
+        this.gameClient.playCard(card)
+        this.animateDiscard(element)
+        this.animateCooldown()
+    }
+
+    async choosePlayer(players) {
+        return new Promise(resolve => {
+            this.setPlayStatus("Choose a player to target")
+            console.log(players)
+            players.forEach(uuid => {
+                if (uuid === this.uuid) return
+                const element = document.querySelector(`.player${uuid}`)
+                console.log(uuid, element)
+                element.style.cursor = "pointer"
+
+                element.addEventListener("click", () => {
+                    element.style.cursor = "auto"
+                    this.setPlayStatus(`Waiting for ${this.gameClient.getPlayer(uuid)} to choose a card...`)
+                    resolve(uuid)
+                }, { once: true })
+            })
+        })
+    }
+
+    async chooseCard(types) {
+        return new Promise(resolve => {
+            this.setPlayStatus("Choose a card to give")
+            types.forEach(type => {
+                const element = document.querySelector(`.${type}.cardGroup`)
+
+                element.style.cursor = "pointer"
+
+                element.addEventListener("click", () => {
+                    element.style.cursor = "auto"
+                    resolve(type)
+                }, { once: true })
+            })
+        })
+    }
+
+    getUsername(uuid) {
+        return this.gameClient.getPlayer(uuid)
+    }
+
+    // Reactions
+    onNewTurn(event) {
+        const { uuid } = event.detail
+        this.setTurnStatus(uuid)
+        this.setPlayStatus("")
+    }
+
+    onPlayCard(event) {
+        const { card, uuid } = event.detail
+        const isMyTurn = uuid === this.uuid
+        if (isMyTurn) return
+
+        const username = this.gameClient.getPlayer(uuid)
+        this.setPlayStatus(`${username} played ${card.name}`)
+
+        const element = this.cardToHTML(card)
+        // element.style.scale = "0.5"
+
+        const hand = document.querySelector(`#otherPlayers .player${uuid} .hand`)
+        hand.firstElementChild.remove()
+        hand.appendChild(element)
+        window.requestAnimationFrame(() => this.animateDiscard(element))
+
+        this.animateCooldown()
+    }
+
+    onRequestInput(event) {
+        const { input, players, types } = event.detail
+        switch (input) {
+            case "target":
+                this.choosePlayer(Array.from(players.keys()))
+                    .then(target => this.gameClient.provideInput({ target }))
+                break
+            case "cardType":
+                this.chooseCard(types)
+                    .then(cardType => this.gameClient.provideInput({ cardType }))
+                break
+        }
+    }
+
+    onDrawCard(event) {
+        const { card, uuid, handSize } = event.detail
+        const drawPile = document.getElementById("drawPile")
+
+        if (uuid === this.uuid) {
+            const cardGroup = document.getElementById("hand").querySelector(`.cardGroup.${card.cardType}`)
+
+            const cardDiv = this.cardToHTML(card, true)
+            drawPile.appendChild(cardDiv)
+            this.glide(cardDiv, cardGroup)
+        } else {
+            this.addToPlayerHand(uuid, handSize)
+        }
+    }
+
+    showFuture(event) {
+        const cards = event.detail
+        console.log(cards)
+        const div = document.getElementById("future")
+        const ol = div.querySelector("ol")
+        cards.forEach(card => {
+            const li = document.createElement("li")
+            li.appendChild(this.cardToHTML(card))
+            ol.appendChild(li)
+        })
+
+        div.classList.remove("hidden")
+
+        div.querySelector("button").addEventListener("click", () => {
+            div.classList.add('hidden')
+            ol.innerHTML = ""
+        }, { once: true })
+    }
+
+    giveCard(event) {
+        const { card, to } = event.detail
+
+        const element = document.querySelector(`.cardGroup.${card.cardType}`).firstElementChild
+        const end = document.querySelector(`#otherPlayers .player${to} .hand`)
+
+        window.requestAnimationFrame(() => {
+            this.glide(element, end, 0, 0.5).then(() => {
+                element.remove()
+                const cardBack = this.cardToHTML()
+                end.appendChild(cardBack)
+            })
+        })
+
+        this.setPlayStatus(`You sent a ${card.name} card to ${this.gameClient.getPlayer(to)}`)
+    }
+
+    receiveCard(event) {
+        const { card, from } = event.detail
+
+        const element = this.cardToHTML(card, true)
+        element.style.transform = "scale(0.5)"
+
+        const start = document.querySelector(`#otherPlayers .player${from} .hand`)
+        const end = document.querySelector(`.cardGroup.${card.cardType}`)
+
+        start.firstElementChild.remove()
+        start.appendChild(element)
+        window.requestAnimationFrame(() => this.glide(element, end))
+
+        this.setPlayStatus(`You got a ${card.name} card from ${this.gameClient.getPlayer(from)}!`)
+    }
+
+    setTurnStatus(uuid) {
+        const isMyTurn = uuid === this.uuid
+        const text = isMyTurn ? "It's your turn!" : `It's ${this.gameClient.getPlayer(uuid)}'s turn`
+        console.log(text)
+        document.getElementById("turnStatus").textContent = text;
+    }
+
+    setPlayStatus(text) {
+        console.log(text)
+        document.getElementById("playStatus").textContent = text;
+    }
+
     // Animations
     async glide(element, newParent, rotate = 0, scale = 1) {
         const startPosition = element.parentElement.getBoundingClientRect()
@@ -197,96 +368,4 @@ export class GameController {
         })
     }
 
-    // Actions
-    playCard(card, element) {
-        this.gameClient.playCard(card)
-        this.animateDiscard(element)
-        this.animateCooldown()
-    }
-
-    async choosePlayer(players) {
-        return new Promise(resolve => {
-            this.setStatus({ detail: "Choose a player to target" })
-            console.log(players)
-            players.forEach(uuid => {
-                if (uuid === this.uuid) return
-                const element = document.querySelector(`.player${uuid}`)
-                console.log(uuid, element)
-                element.style.cursor = "pointer"
-
-                element.addEventListener("click", () => {
-                    element.style.cursor = "auto"
-                    this.setStatus({ detail: "It's your turn! (draw a card to end it)" })
-                    resolve(uuid)
-                }, { once: true })
-            })
-        })
-    }
-
-    async chooseCard() {
-        return new Promise(resolve => {
-            this.setStatus({ detail: "Choose a card to give" })
-            document.querySelectorAll(".cardGroup").forEach(element => {
-                const type = element.className.split(" ")[0]
-
-                element.style.cursor = "pointer"
-
-                element.addEventListener("click", () => {
-                    element.style.cursor = "auto"
-                    // this.setStatus({ detail: "It's your turn! (draw a card to end it)" })
-                    resolve(type)
-                }, { once: true })
-            })
-        })
-    }
-
-    // Reactions
-    onPlayCard(event) {
-        const { card, uuid } = event.detail
-        if (uuid === this.uuid) return
-
-        const element = this.cardToHTML(card)
-        // element.style.scale = "0.5"
-
-        const hand = document.querySelector(`#otherPlayers .player${uuid} .hand`)
-        hand.firstElementChild.remove()
-        hand.appendChild(element)
-        window.requestAnimationFrame(() => this.animateDiscard(element))
-
-        this.animateCooldown()
-    }
-
-    onRequestInput(event) {
-        const { input, players } = event.detail
-        switch (input) {
-            case "target":
-                this.choosePlayer(Array.from(players.keys()))
-                    .then(target => this.gameClient.provideInput({ target }))
-                break
-            case "cardType":
-                this.chooseCard()
-                    .then(cardType => this.gameClient.provideInput({ cardType }))
-                break
-        }
-    }
-
-    onDrawCard(event) {
-        const { card, uuid, handSize } = event.detail
-        const drawPile = document.getElementById("drawPile")
-
-        if (uuid === this.uuid) {
-            const cardGroup = document.getElementById("hand").querySelector(`.cardGroup.${card.cardType}`)
-
-            const cardDiv = this.cardToHTML(card, true)
-            drawPile.appendChild(cardDiv)
-            this.glide(cardDiv, cardGroup)
-        } else {
-            this.addToPlayerHand(uuid, handSize)
-        }
-    }
-
-    setStatus(event) {
-        console.log(event.detail)
-        document.getElementById("status").textContent = event.detail;
-    }
 }

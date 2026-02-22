@@ -18,20 +18,25 @@ export class GameClient {
                 this.initialiseHand(payload)
                 break
             case "nextturn":
-                this.newTurn(payload)
+                this.newTurn(payload.uuid)
+                this.dispatchEvent("newturn", { ...payload, username: this.players.get(payload.uuid) })
                 break
             case "playcard":
-                // this.requestInput(payload.card.cardType, payload.uuid)
                 this.lastTypePlayed = payload.card.cardType
-                this.dispatchEvent("playcard", payload)
+                this.dispatchEvent("playcard", { ...payload, username: this.players.get(payload.uuid) })
             case "allownope":
                 this.configureCardPlayability(payload.allowNope)
                 break
             case "requestinput":
-                this.requestInput(payload.input)
+                this.requestInput(payload)
+                break
+            case "show":
+            case "give":
+            case "receive":
+                this.dispatchEvent(type, payload)
                 break
             case "drawcard":
-                if (payload.uuid === this.uuid) this.takeCard(payload.card)
+                if (payload.uuid === this.uuid) this.onDrawCard(payload.card)
                 this.dispatchEvent("draw", payload)
                 this.configureCardPlayability(false)
                 break
@@ -47,9 +52,7 @@ export class GameClient {
         this.currentPlayerId = uuid
         this.isMyTurn = this.currentPlayerId === this.uuid
 
-        this.dispatchEvent("statusupdate", this.isMyTurn
-            ? "It's your turn!"
-            : `It's ${this.getPlayer()}'s turn`)
+        this.dispatchEvent("newturn", { currentPlayerId: uuid, isMyTurn: this.isMyTurn })
 
         this.configureCardPlayability()
     }
@@ -111,7 +114,7 @@ export class GameClient {
         }
     }
 
-    takeCard(card) {
+    onDrawCard(card) {
         this.lastTypeDrawn = card.cardType
         this.hand.add(card)
 
@@ -120,21 +123,16 @@ export class GameClient {
         }
     }
 
-    requestInput(cardType) {
-        console.log("Requesting input for", cardType)
-        switch (cardType) {
-            case "favor":
-                this.dispatchEvent("requestinput", "cardType")
-                break
-            default:
-                this.send("provideinput", { cardType: null })
+    requestInput(payload) {
+        console.log("Requesting input for", payload.input)
+        if (payload.input === "cardType" && this.lastTypePlayed === "favor") {
+            this.dispatchEvent("requestinput", payload)
         }
     }
 
     getPlayer(uuid = this.currentPlayerId) {
         return this.players.get(uuid)
     }
-
 
     send(type, payload) {
         const message = new SocketMessage(this.uuid, type, payload);

@@ -88,7 +88,7 @@ export class FutureAction extends Action {
 
     async run(gameCtx) {
         const player = gameCtx.getPlayer()
-        // await gameCtx.showFuture(player)
+        this.changes[player.uuid] = { "show": gameCtx.seeFuture() }
     }
 }
 
@@ -134,8 +134,8 @@ export class TransferAction extends Action {
         const player = gameCtx.getPlayer()
         const target = gameCtx.getPlayer(await this.inputs.target)
         console.log("Transferring from", target.username, "to", player.username)
-        gameCtx.transferCard(target, player, await this.inputs.cardType)
-        this.changes[player.uuid] = true
-        this.changes[target.uuid] = true
+        const card = gameCtx.transferCard(target, player, await this.inputs.cardType)
+        this.changes[player.uuid] = { "receive": { card, from: target.uuid } }
+        this.changes[target.uuid] = { "give": { card, to: player.uuid } }
     }
 }

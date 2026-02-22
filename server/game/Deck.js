@@ -4,7 +4,7 @@ export class Deck {
     constructor(numDecks = 1) {
         this.numDecks = numDecks
         this.cards = []
-        this.discard = []
+        this.lastTypePlayed = ""
     }
 
     deal(hands) {
@@ -48,7 +48,7 @@ export class Deck {
     }
 
     discard(card) {
-        this.discard.push(card)
+        this.lastTypePlayed = card.cardType
     }
 
     insert(card, position) {
@@ -63,6 +63,6 @@ export class Deck {
     }
 
     seeFuture() {
-        return this.cards.slice(-3)
+        return this.cards.slice(-3).reverse()
     }
 }

@@ -225,6 +225,22 @@ output {
     height: 11rem;
 }
 
+#future {
+    display: block;
+
+    ol {
+        display: flex;
+
+        li {
+            width: fit-content;
+        }
+    }
+}
+
+#future.hidden {
+    display: none;
+}
+
 #hand {
     display: flex;
     flex-wrap: wrap;

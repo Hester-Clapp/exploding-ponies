@@ -30,9 +30,6 @@ export class CardHandler {
                     }
                     if (nextCard.cardType !== "exploding") i++; // Do not nope explosions
                     break;
-                case "defuse":
-                    if (nextCard?.cardType === "exploding") i++
-                    break;
                 case "cat1":
                 case "cat2":
                 case "cat3":
@@ -48,6 +45,8 @@ export class CardHandler {
                     }
                     i++
                     break;
+                case "defuse":
+                    if (nextCard?.cardType === "exploding") i++
                 default:
                     const action = Action.ofType(card.cardType)
                     actions.unshift(action)
