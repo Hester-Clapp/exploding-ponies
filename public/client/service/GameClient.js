@@ -4,8 +4,12 @@ import { Hand } from "../../common/Hand.js"
 export class GameClient {
     constructor(uuid, players, socket) {
         this.uuid = uuid
-        this.players = players
         this.socket = socket
+
+        this.players = new Map()
+        for (const [uuid, username] of players.entries()) {
+            this.players.set(uuid, { username, isAlive: false })
+        }
 
         this.isMyTurn = false
         this.lastTypePlayed = ""
@@ -25,9 +29,9 @@ export class GameClient {
 
             case "playcard":
                 this.lastTypePlayed = payload.card.cardType
-                this.dispatchEvent("playcard", { ...payload, username: this.players.get(payload.uuid) })
-            case "allownope":
-                this.configureCardPlayability(payload.allowNope)
+                this.dispatchEvent(type, { ...payload, username: this.getUsername(payload.uuid) })
+            case "resolve":
+                this.configureCardPlayability(payload.coolingDown)
                 break
 
             case "requestinput":
@@ -35,24 +39,34 @@ export class GameClient {
                 break
 
             case "give":
-            case "receive":
-            case "show":
+                this.hand.take(payload.card)
                 this.dispatchEvent(type, payload)
                 this.configureCardPlayability(false)
                 break
 
-            case "shuffle":
-                this.dispatchEvent("shuffle")
+            case "receive":
+                this.hand.add(payload.card)
+                this.dispatchEvent(type, payload)
+                this.configureCardPlayability(false)
                 break
 
             case "drawcard":
                 this.drawPileLength = payload.length
                 if (payload.uuid === this.uuid) this.onDrawCard(payload.card)
-                this.dispatchEvent("draw", payload)
+                this.dispatchEvent(type, payload)
                 this.configureCardPlayability(false)
                 break
 
             case "eliminate":
+                this.lastTypePlayed = ""
+                if (payload.uuid === this.uuid) this.dispatchEvent("eliminated")
+                else this.dispatchEvent(type, payload)
+                break
+
+            case "shuffle":
+            case "show":
+            case "win":
+                this.dispatchEvent(type, payload)
                 break
         }
     }
@@ -99,13 +113,13 @@ export class GameClient {
 
     playCard(card) {
         this.send("playcard", card)
+        this.hand.take(card)
         switch (card.cardType) {
             case "cat1":
             case "cat2":
             case "cat3":
             case "cat4":
             case "cat5":
-                console.log(this.lastTypePlayed, card.cardType)
                 if (this.lastTypePlayed !== card.cardType) break // Only ask for input after the second cat
             case "favor":
                 this.dispatchEvent("requestinput", { input: "target", players: this.players })
@@ -128,6 +142,10 @@ export class GameClient {
         }
     }
 
+    leaveGame() {
+        this.send("leave")
+    }
+
     onDrawCard(card) {
         this.lastTypeDrawn = card.cardType
         this.hand.add(card)
@@ -138,7 +156,6 @@ export class GameClient {
     }
 
     requestInput(payload) {
-        console.log("Requesting input for", payload.input)
         if (payload.input === "cardType" && this.lastTypePlayed === "favor") {
             this.dispatchEvent("requestinput", payload)
         }
@@ -146,6 +163,10 @@ export class GameClient {
 
     getPlayer(uuid = this.currentPlayerId) {
         return this.players.get(uuid)
+    }
+
+    getUsername(uuid = this.currentPlayerId) {
+        return this.getPlayer(uuid).username
     }
 
     send(type, payload) {

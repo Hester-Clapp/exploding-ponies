@@ -31,7 +31,6 @@ export class Action {
 
     provideInput(input, value) {
         if (input in this.resolvers) {
-            console.log("Resolving", input)
             this.resolvers[input](value)
         }
     }
@@ -76,10 +75,8 @@ export class ExplodingAction extends Action {
 
     async run(gameCtx) {
         const player = gameCtx.getPlayer()
-        gameCtx.eliminatePlayer(player)
-        // this.changes[player.uuid] = { eliminate: true }
+        gameCtx.eliminatePlayer()
         this.changes.eliminate = player.uuid
-        gameCtx.advanceTurn()
         if (gameCtx.draws !== 1) this.changes.draws = true
         gameCtx.draws = 1
     }

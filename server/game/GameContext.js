@@ -34,14 +34,15 @@ export class GameContext {
         return this.players.get(uuid)
     }
 
-    eliminatePlayer() {
-        const player = this.getPlayer()
+    eliminatePlayer(uuid = this.currentPlayerId) {
+        const player = this.getPlayer(uuid)
         player.isAlive = false
         for (const p of this.players.values()) {
             if (p.nextPlayerId === player.uuid) {
                 p.nextPlayerId = player.nextPlayerId
             }
         }
+        if (uuid === this.currentPlayerId) this.currentPlayerId = player.nextPlayerId
     }
 
     advanceTurn() {

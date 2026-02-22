@@ -120,6 +120,7 @@ export class RoomServer {
         const username = user?.username || "";
         console.log(`${username} has left room ${this.roomId}`);
         this.publish("leave", user.expose());
+        this.gameServer.onLeave(user.uuid)
 
         for (const event in this.bound) ws.removeEventListener(event, this.bound[event])
         this.sockets.delete(user.uuid);

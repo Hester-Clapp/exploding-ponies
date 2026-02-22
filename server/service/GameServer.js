@@ -95,7 +95,7 @@ export class GameServer {
         if (this.resolveTimeoutId) clearTimeout(this.resolveTimeoutId)
         this.resolveTimeoutId = setTimeout(this.resolveActions.bind(this), this.cooldown * 1000)
 
-        this.publish("playcard", { card, uuid, allowNope: true })
+        this.publish("playcard", { card, uuid, coolingDown: true })
     }
 
     provideInput(input, value) {
@@ -119,7 +119,7 @@ export class GameServer {
     }
 
     resolveActions() {
-        this.publish("allownope", { allowNope: false })
+        this.publish("resolve", { coolingDown: false })
 
         const actions = this.cardHandler.resolve()
 
@@ -141,7 +141,6 @@ export class GameServer {
     }
 
     async playActions(actions) {
-        console.log("playing", actions)
         this.cachedInputs.clear()
         this.pendingInputs.clear()
 
@@ -158,11 +157,24 @@ export class GameServer {
             }
         }
         if ("shuffle" in changes) this.publish("shuffle")
-        if ("eliminate" in changes) this.publish("eliminate", { uuid: changes.uuid })
         if ("draws" in changes) this.publish("draws", { draws: this.gameCtx.draws })
         if ("turn" in changes) this.publish("nextturn", { uuid: this.gameCtx.currentPlayerId })
+        if ("eliminate" in changes) {
+            this.publish("eliminate", { uuid: changes.eliminate })
+            this.checkWin()
+        }
+    }
 
-        console.log(this.gameCtx.deck.cards.map(card => card?.cardType))
+    onLeave(uuid) {
+        this.gameCtx.eliminatePlayer(uuid)
+        this.publish("eliminate", { uuid, currentPlayerId: this.gameCtx.currentPlayerId })
+        this.checkWin()
+    }
+
+    checkWin() {
+        if (this.gameCtx.getPlayer().nextPlayerId === this.gameCtx.currentPlayerId) {
+            this.publish("win", { uuid: this.gameCtx.currentPlayerId })
+        }
     }
 
     send(uuid, type, payload, sender = "") {

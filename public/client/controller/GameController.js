@@ -13,6 +13,9 @@ export class GameController {
             receiveCard: this.receiveCard.bind(this),
             shuffle: this.shuffle.bind(this),
             onDrawCard: this.onDrawCard.bind(this),
+            eliminatePlayer: this.eliminatePlayer.bind(this),
+            eliminateSelf: this.eliminateSelf.bind(this),
+            onWin: this.onWin.bind(this)
         }
 
         this.eventHandlers = {
@@ -24,7 +27,10 @@ export class GameController {
             give: this.bound.giveCard,
             receive: this.bound.receiveCard,
             shuffle: this.bound.shuffle,
-            draw: this.bound.onDrawCard,
+            drawcard: this.bound.onDrawCard,
+            eliminate: this.bound.eliminatePlayer,
+            eliminated: this.bound.eliminateSelf,
+            win: this.bound.onWin,
         }
     }
 
@@ -32,12 +38,15 @@ export class GameController {
         this.uuid = uuid
         this.gameClient = gameClient
         this.cooldownTime = cooldownTime
+
+        window.addEventListener("beforeunload", () => this.gameClient.leaveGame())
     }
 
     async afterLoad() {
         this.drawPile = document.getElementById("drawPile")
         this.discardPile = document.getElementById("discardPile")
         this.cooldown = document.getElementById("cooldown")
+        this.handDisplay = document.getElementById("hand")
 
         this.bound.drawCard = this.gameClient.drawCard.bind(this.gameClient)
         this.drawPile.addEventListener("click", this.bound.drawCard)
@@ -66,7 +75,7 @@ export class GameController {
             div.classList.add(`player${uuid}`)
 
             const nameTag = document.createElement("h3")
-            nameTag.textContent = player;
+            nameTag.textContent = player.username;
             div.appendChild(nameTag)
 
             const hand = document.createElement("div");
@@ -97,9 +106,8 @@ export class GameController {
         const { hand, length } = event.detail
         this.setDrawPileHeight(length)
 
-        const handDisplay = document.getElementById("hand");
         for (const type in hand) {
-            const cardGroup = handDisplay.querySelector(`.${type}`)
+            const cardGroup = this.handDisplay.querySelector(`.${type}`)
             cardGroup.innerHTML = "";
 
             for (const card of hand[type]) {
@@ -140,7 +148,6 @@ export class GameController {
             window.addEventListener("enablecard", enableCard)
 
             div.addEventListener("click", () => {
-                console.log("playing card", card.cardType)
                 if (div.classList.contains("enabled")) {
                     div.classList.remove("enabled")
                     window.removeEventListener("enablecard", enableCard)
@@ -174,7 +181,7 @@ export class GameController {
                     document.querySelectorAll(`#otherPlayers>div`).forEach(el => el.style.cursor = "auto")
                     element.style.cursor = "auto"
 
-                    this.setPlayStatus(`Waiting for ${this.gameClient.getPlayer(uuid)} to choose a card...`)
+                    this.setPlayStatus(`Waiting for ${this.gameClient.getUsername(uuid)} to choose a card...`)
 
                     controller.abort()
                     resolve(uuid)
@@ -212,7 +219,6 @@ export class GameController {
             input.value = Math.floor(length / 2)
 
             div.querySelector(".card").style["box-shadow"] = `0 ${length * 4}px 0 0.25rem #ddd`
-            console.log(div.querySelector(".card"), length)
 
             overlay.classList.remove("hidden")
             div.classList.remove("hidden")
@@ -225,9 +231,20 @@ export class GameController {
         })
     }
 
+    leaveGame() {
+        this.gameClient.leaveGame()
+        loadPage("rooms", this.uuid)
+    }
+
     setTurnStatus(uuid) {
         const isMyTurn = uuid === this.uuid
-        const text = isMyTurn ? "It's your turn!" : `It's ${this.gameClient.getPlayer(uuid)}'s turn`
+        const text = isMyTurn ? "It's your turn!" : `It's ${this.gameClient.getUsername(uuid)}'s turn`
+        document.getElementById("turnStatus").textContent = text;
+    }
+
+    setWinStatus(uuid) {
+        const isMyTurn = uuid === this.uuid
+        const text = isMyTurn ? "You won!" : `${this.gameClient.getUsername(uuid)} won!`
         document.getElementById("turnStatus").textContent = text;
     }
 
@@ -244,11 +261,9 @@ export class GameController {
 
     onPlayCard(event) {
         const { card, uuid } = event.detail
-        const isMyTurn = uuid === this.uuid
-        if (isMyTurn) return
+        if (uuid === this.uuid) return
 
-        const username = this.gameClient.getPlayer(uuid)
-        this.setPlayStatus(`${username} played ${card.name}`)
+        this.setPlayStatus(`${this.gameClient.getUsername(uuid)} played ${card.name}`)
 
         const element = this.cardToHTML(card)
         // element.style.scale = "0.5"
@@ -284,7 +299,7 @@ export class GameController {
         this.setDrawPileHeight(length)
 
         if (uuid === this.uuid) {
-            const cardGroup = document.getElementById("hand").querySelector(`.cardGroup.${card.cardType}`)
+            const cardGroup = this.handDisplay.querySelector(`.cardGroup.${card.cardType}`)
 
             const cardDiv = this.cardToHTML(card, true)
             drawPile.appendChild(cardDiv)
@@ -329,7 +344,7 @@ export class GameController {
             })
         })
 
-        this.setPlayStatus(`You sent a ${card.name} card to ${this.gameClient.getPlayer(to)}`)
+        this.setPlayStatus(`You sent a ${card.name} card to ${this.gameClient.getUsername(to)}`)
     }
 
     receiveCard(event) {
@@ -346,7 +361,7 @@ export class GameController {
         start.appendChild(element)
         window.requestAnimationFrame(() => this.glide(element, end))
 
-        this.setPlayStatus(`You got a ${card.name} card from ${this.gameClient.getPlayer(from)}!`)
+        this.setPlayStatus(`You got a ${card.name} card from ${this.gameClient.getUsername(from)}!`)
     }
 
     shuffle() {
@@ -354,6 +369,32 @@ export class GameController {
         this.drawPile.style.transition = "transform 0.25s ease-in-out"
         requestAnimationFrame(() => this.drawPile.style.transform = "scaleX(0)")
         setTimeout(() => requestAnimationFrame(() => this.drawPile.style.transform = "scaleX(1)"), 500)
+    }
+
+    eliminatePlayer(event) {
+        const { uuid, currentPlayerId } = event.detail
+        if (currentPlayerId) { // Player left game
+            this.setTurnStatus(currentPlayerId)
+            this.setPlayStatus(`${this.gameClient.getUsername(uuid)} left the game`)
+        } else { // Player exploded
+            this.setPlayStatus(`${this.gameClient.getUsername(uuid)} has been eliminated!`)
+        }
+        document.querySelector(`.player${uuid}`).style.filter = "brightness(0.5)"
+    }
+
+    eliminateSelf() {
+        this.setPlayStatus(`You have been eliminated :(`)
+        this.handDisplay.style.filter = "opacity(0)"
+        this.drawPile.style.cursor = "auto"
+        this.drawPile.removeEventListener("click", this.bound.drawCard)
+        setTimeout(() => this.handDisplay.remove(), 500)
+    }
+
+    onWin(event) {
+        const { uuid } = event.detail
+        this.setWinStatus(uuid)
+        this.setPlayStatus("Exiting to lobby in 5 seconds...")
+        setTimeout(() => this.leaveGame(), 5000)
     }
 
     // Animations
