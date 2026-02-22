@@ -51,6 +51,9 @@ export class GameClient {
                 this.dispatchEvent("draw", payload)
                 this.configureCardPlayability(false)
                 break
+
+            case "eliminate":
+                break
         }
     }
 

@@ -113,7 +113,6 @@ export class GameController {
     setDrawPileHeight(length) {
         if (length === 0) {
             this.drawPile.style.display = "none"
-            // this.drawPile.removeEventListener("click", this.bound.drawCard)
         } else {
             this.drawPile.style.display = "block"
         }
@@ -141,6 +140,7 @@ export class GameController {
             window.addEventListener("enablecard", enableCard)
 
             div.addEventListener("click", () => {
+                console.log("playing card", card.cardType)
                 if (div.classList.contains("enabled")) {
                     div.classList.remove("enabled")
                     window.removeEventListener("enablecard", enableCard)
@@ -162,35 +162,43 @@ export class GameController {
 
     async choosePlayer(players) {
         return new Promise(resolve => {
+            const controller = new AbortController()
             this.setPlayStatus("Choose a player to target")
+
             players.forEach(uuid => {
                 if (uuid === this.uuid) return
                 const element = document.querySelector(`.player${uuid}`)
-                console.log(uuid, element)
                 element.style.cursor = "pointer"
 
                 element.addEventListener("click", () => {
                     document.querySelectorAll(`#otherPlayers>div`).forEach(el => el.style.cursor = "auto")
                     element.style.cursor = "auto"
+
                     this.setPlayStatus(`Waiting for ${this.gameClient.getPlayer(uuid)} to choose a card...`)
+
+                    controller.abort()
                     resolve(uuid)
-                }, { once: true })
+                }, { signal: controller.signal })
             })
         })
     }
 
     async chooseCard(types) {
         return new Promise(resolve => {
+            const controller = new AbortController()
             this.setPlayStatus("Choose a card to give")
+
             types.forEach(type => {
                 const element = document.querySelector(`.${type}.cardGroup`)
-
                 element.style.cursor = "pointer"
 
-                element.addEventListener("click", () => {
+                element.addEventListener("click", (e) => {
+                    e.stopPropagation()
                     document.querySelectorAll(`.cardGroup`).forEach(el => el.style.cursor = "auto")
+
+                    controller.abort()
                     resolve(type)
-                }, { once: true })
+                }, { signal: controller.signal, capture: true })
             })
         })
     }
