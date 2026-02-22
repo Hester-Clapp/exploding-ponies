@@ -39,11 +39,11 @@ export class Action {
 }
 
 export class AttackAction extends Action {
+    changes = { turn: true, draws: true }
     constructor() {
         super("attack")
     }
 
-    changes = { turn: true, draws: true }
     async run(gameCtx) {
         gameCtx.advanceTurn()
         gameCtx.draws = (gameCtx.draws === 1) ? 2 : gameCtx.draws + 2
@@ -51,18 +51,20 @@ export class AttackAction extends Action {
 }
 
 export class DefuseAction extends Action {
-    // changes = { deck: true }
+    changes = { turn: true }
     constructor() {
         super("defuse")
         this.inputs = {
             exploding: new Promise(resolve => this.resolvers.exploding = resolve),
-            insertPosition: new Promise(resolve => this.resolvers.insertPosition = resolve)
+            position: new Promise(resolve => this.resolvers.position = resolve)
         }
     }
 
     async run(gameCtx) {
-        gameCtx.deck.insert(await this.exploding, await this.insertPosition)
+        gameCtx.deck.insert(await this.inputs.exploding, await this.inputs.position)
         gameCtx.advanceTurn()
+        if (gameCtx.draws !== 1) this.changes.draws = true
+        gameCtx.draws = 1
     }
 }
 
@@ -72,12 +74,14 @@ export class ExplodingAction extends Action {
         super("exploding")
     }
 
-
     async run(gameCtx) {
         const player = gameCtx.getPlayer()
         gameCtx.eliminatePlayer(player)
+        // this.changes[player.uuid] = { eliminate: true }
+        this.changes.eliminate = player.uuid
         gameCtx.advanceTurn()
-        this.changes[player.uuid] = true
+        if (gameCtx.draws !== 1) this.changes.draws = true
+        gameCtx.draws = 1
     }
 }
 
@@ -93,8 +97,7 @@ export class FutureAction extends Action {
 }
 
 export class ShuffleAction extends Action {
-    // changes = { deck: true }
-
+    changes = { shuffle: true }
     constructor() {
         super("shuffle")
     }
@@ -105,17 +108,17 @@ export class ShuffleAction extends Action {
 }
 
 export class SkipAction extends Action {
-    changes = { turn: true, draws: true }
-
     constructor() {
         super("skip")
     }
 
     async run(gameCtx) {
         if (gameCtx.draws > 1) {
-            gameCtx.draws--;
+            gameCtx.draws--
+            this.changes.draws = true
         } else {
             gameCtx.advanceTurn()
+            this.changes.turn = true
             gameCtx.draws = 1
         }
     }
@@ -133,7 +136,6 @@ export class TransferAction extends Action {
     async run(gameCtx) {
         const player = gameCtx.getPlayer()
         const target = gameCtx.getPlayer(await this.inputs.target)
-        console.log("Transferring from", target.username, "to", player.username)
         const card = gameCtx.transferCard(target, player, await this.inputs.cardType)
         this.changes[player.uuid] = { "receive": { card, from: target.uuid } }
         this.changes[target.uuid] = { "give": { card, to: player.uuid } }

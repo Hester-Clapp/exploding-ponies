@@ -4,7 +4,7 @@
 <div id="otherPlayers"></div>
 <div id="deck">
     <div class="card" id="drawPile">
-        <img src="../../resources/images/back.png" alt="Deck" id="deckImage">
+        <img src="../../resources/images/back.png" alt="Deck">
     </div>
     <div>
         <div id="discardPile"></div>
@@ -12,10 +12,6 @@
             <div></div>
         </div>
     </div>
-</div>
-<div id="future" class="hidden">
-    <ol></ol>
-    <button>Ok</button>
 </div>
 <div id="hand">
     <div class="exploding cardGroup"></div>
@@ -31,4 +27,22 @@
     <div class="cat3 cardGroup"></div>
     <div class="cat4 cardGroup"></div>
     <div class="cat5 cardGroup"></div>
+</div>
+<div id="overlay" class="hidden">
+    <div id="obscure"></div>
+    <div id="future" class="hidden">
+        <h3>See The Future</h3>
+        <ol></ol>
+        <button>Ok</button>
+    </div>
+    <div id="insert" class="hidden">
+        <h3>Insert Villain Card</h3>
+        <div>
+            <div class="card">
+                <img src="../../resources/images/back.png" alt="Deck">
+            </div>
+            <input type="range" min="0" step="1">
+        </div>
+        <button>Ok</button>
+    </div>
 </div>

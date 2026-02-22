@@ -44,15 +44,24 @@ export class GameServer {
                 .map(player => player.hand)
         )
         for (const uuid of this.gameCtx.players.keys()) {
-            this.send(uuid, "deal", this.gameCtx.getPlayer(uuid).hand.toArray())
+            this.send(uuid, "deal", {
+                hand: this.gameCtx.getPlayer(uuid).hand.toArray(),
+                length: this.gameCtx.deck.length
+            })
         }
 
         this.publish("nextturn", { uuid: this.gameCtx.currentPlayerId })
     }
 
     advanceTurn() {
-        this.gameCtx.advanceTurn()
-        this.publish("nextturn", { uuid: this.gameCtx.currentPlayerId })
+        if (this.gameCtx.draws > 1) {
+            this.gameCtx.draws--;
+            this.publish("draws", { draws: this.gameCtx.draws })
+        } else {
+            this.gameCtx.draws = 1
+            this.gameCtx.advanceTurn()
+            this.publish("nextturn", { uuid: this.gameCtx.currentPlayerId })
+        }
     }
 
     drawCard(uuid) {
@@ -66,7 +75,7 @@ export class GameServer {
             card,
             uuid,
             handSize: this.gameCtx.getPlayer(uuid).hand.toArray().length,
-            probability: this.gameCtx.getExplodingProbability()
+            length: this.gameCtx.deck.length
         })
 
         if (card.cardType === "exploding") {
@@ -143,22 +152,24 @@ export class GameServer {
         }
 
         // Send changes
-        // this.publish("draws", this.gameCtx.draws)
         for (const uuid of this.gameCtx.players.keys()) {
             for (const change in changes[uuid]) {
                 this.send(uuid, change, changes[uuid][change])
             }
         }
-        // if ("deck" in changes) this.publish("deck", { length: this.gameCtx.deck.cards.length })
-        if ("draws" in changes) this.publish("draws", this.gameCtx.draws)
+        if ("shuffle" in changes) this.publish("shuffle")
+        if ("eliminate" in changes) this.publish("eliminate", { uuid: changes.uuid })
+        if ("draws" in changes) this.publish("draws", { draws: this.gameCtx.draws })
         if ("turn" in changes) this.publish("nextturn", { uuid: this.gameCtx.currentPlayerId })
+
+        console.log(this.gameCtx.deck.cards.map(card => card?.cardType))
     }
 
     send(uuid, type, payload, sender = "") {
         new SocketMessage(sender, type, payload).send(this.sockets.get(uuid));
     }
 
-    publish(type, payload, sender = null) {
+    publish(type, payload, sender = "") {
         for (const uuid of this.sockets.keys()) {
             if (!sender || uuid !== sender) {
                 this.send(uuid, type, payload);

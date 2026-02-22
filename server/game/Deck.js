@@ -35,6 +35,10 @@ export class Deck {
         this.shuffle()
     }
 
+    get length() {
+        return this.cards.length
+    }
+
     add(Card, number, ...args) {
         for (let deck = 1; deck <= this.numDecks; deck++) {
             for (let i = 1; i <= number; i++) {
@@ -52,6 +56,7 @@ export class Deck {
     }
 
     insert(card, position) {
+        console.log(card, position)
         this.cards.splice(position, 0, card)
     }
 

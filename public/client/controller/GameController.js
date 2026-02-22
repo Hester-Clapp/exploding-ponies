@@ -11,6 +11,7 @@ export class GameController {
             showFuture: this.showFuture.bind(this),
             giveCard: this.giveCard.bind(this),
             receiveCard: this.receiveCard.bind(this),
+            shuffle: this.shuffle.bind(this),
             onDrawCard: this.onDrawCard.bind(this),
         }
 
@@ -22,6 +23,7 @@ export class GameController {
             show: this.bound.showFuture,
             give: this.bound.giveCard,
             receive: this.bound.receiveCard,
+            shuffle: this.bound.shuffle,
             draw: this.bound.onDrawCard,
         }
     }
@@ -33,11 +35,12 @@ export class GameController {
     }
 
     async afterLoad() {
+        this.drawPile = document.getElementById("drawPile")
         this.discardPile = document.getElementById("discardPile")
         this.cooldown = document.getElementById("cooldown")
 
-        const drawPile = document.getElementById("drawPile");
-        drawPile.addEventListener("click", () => { this.gameClient.drawCard() })
+        this.bound.drawCard = this.gameClient.drawCard.bind(this.gameClient)
+        this.drawPile.addEventListener("click", this.bound.drawCard)
 
         for (const event in this.eventHandlers) {
             window.addEventListener(event, this.eventHandlers[event])
@@ -91,9 +94,10 @@ export class GameController {
     }
 
     renderHand(event) {
-        const hand = event.detail
-        const handDisplay = document.getElementById("hand");
+        const { hand, length } = event.detail
+        this.setDrawPileHeight(length)
 
+        const handDisplay = document.getElementById("hand");
         for (const type in hand) {
             const cardGroup = handDisplay.querySelector(`.${type}`)
             cardGroup.innerHTML = "";
@@ -104,6 +108,16 @@ export class GameController {
                 this.glide(cardDiv, cardGroup)
             }
         }
+    }
+
+    setDrawPileHeight(length) {
+        if (length === 0) {
+            this.drawPile.style.display = "none"
+            // this.drawPile.removeEventListener("click", this.bound.drawCard)
+        } else {
+            this.drawPile.style.display = "block"
+        }
+        this.drawPile.style["box-shadow"] = `0 ${length}px 0 0.25rem #ddd`
     }
 
     cardToHTML(card = { cardType: "back", color: "black" }, functional = false) {
@@ -149,7 +163,6 @@ export class GameController {
     async choosePlayer(players) {
         return new Promise(resolve => {
             this.setPlayStatus("Choose a player to target")
-            console.log(players)
             players.forEach(uuid => {
                 if (uuid === this.uuid) return
                 const element = document.querySelector(`.player${uuid}`)
@@ -157,6 +170,7 @@ export class GameController {
                 element.style.cursor = "pointer"
 
                 element.addEventListener("click", () => {
+                    document.querySelectorAll(`#otherPlayers>div`).forEach(el => el.style.cursor = "auto")
                     element.style.cursor = "auto"
                     this.setPlayStatus(`Waiting for ${this.gameClient.getPlayer(uuid)} to choose a card...`)
                     resolve(uuid)
@@ -174,15 +188,43 @@ export class GameController {
                 element.style.cursor = "pointer"
 
                 element.addEventListener("click", () => {
-                    element.style.cursor = "auto"
+                    document.querySelectorAll(`.cardGroup`).forEach(el => el.style.cursor = "auto")
                     resolve(type)
                 }, { once: true })
             })
         })
     }
 
-    getUsername(uuid) {
-        return this.gameClient.getPlayer(uuid)
+    async choosePosition(length) {
+        return new Promise(resolve => {
+            const overlay = document.getElementById("overlay")
+            const div = document.getElementById("insert")
+            const input = div.querySelector("input")
+            input.max = length
+            input.value = Math.floor(length / 2)
+
+            div.querySelector(".card").style["box-shadow"] = `0 ${length * 4}px 0 0.25rem #ddd`
+            console.log(div.querySelector(".card"), length)
+
+            overlay.classList.remove("hidden")
+            div.classList.remove("hidden")
+
+            div.querySelector("button").addEventListener("click", () => {
+                overlay.classList.add("hidden")
+                div.classList.add("hidden")
+                resolve(Number(input.value))
+            }, { once: true })
+        })
+    }
+
+    setTurnStatus(uuid) {
+        const isMyTurn = uuid === this.uuid
+        const text = isMyTurn ? "It's your turn!" : `It's ${this.gameClient.getPlayer(uuid)}'s turn`
+        document.getElementById("turnStatus").textContent = text;
+    }
+
+    setPlayStatus(text) {
+        document.getElementById("playStatus").textContent = text;
     }
 
     // Reactions
@@ -212,7 +254,7 @@ export class GameController {
     }
 
     onRequestInput(event) {
-        const { input, players, types } = event.detail
+        const { input, players, types, length } = event.detail
         switch (input) {
             case "target":
                 this.choosePlayer(Array.from(players.keys()))
@@ -222,12 +264,16 @@ export class GameController {
                 this.chooseCard(types)
                     .then(cardType => this.gameClient.provideInput({ cardType }))
                 break
+            case "position":
+                this.choosePosition(length)
+                    .then(position => this.gameClient.provideInput({ position }))
+                break
         }
     }
 
     onDrawCard(event) {
-        const { card, uuid, handSize } = event.detail
-        const drawPile = document.getElementById("drawPile")
+        const { card, uuid, handSize, length } = event.detail
+        this.setDrawPileHeight(length)
 
         if (uuid === this.uuid) {
             const cardGroup = document.getElementById("hand").querySelector(`.cardGroup.${card.cardType}`)
@@ -242,7 +288,7 @@ export class GameController {
 
     showFuture(event) {
         const cards = event.detail
-        console.log(cards)
+        const overlay = document.getElementById("overlay")
         const div = document.getElementById("future")
         const ol = div.querySelector("ol")
         cards.forEach(card => {
@@ -251,10 +297,12 @@ export class GameController {
             ol.appendChild(li)
         })
 
+        overlay.classList.remove("hidden")
         div.classList.remove("hidden")
 
         div.querySelector("button").addEventListener("click", () => {
-            div.classList.add('hidden')
+            overlay.classList.add("hidden")
+            div.classList.add("hidden")
             ol.innerHTML = ""
         }, { once: true })
     }
@@ -278,6 +326,7 @@ export class GameController {
 
     receiveCard(event) {
         const { card, from } = event.detail
+        this.gameClient.hand.add(card)
 
         const element = this.cardToHTML(card, true)
         element.style.transform = "scale(0.5)"
@@ -292,16 +341,11 @@ export class GameController {
         this.setPlayStatus(`You got a ${card.name} card from ${this.gameClient.getPlayer(from)}!`)
     }
 
-    setTurnStatus(uuid) {
-        const isMyTurn = uuid === this.uuid
-        const text = isMyTurn ? "It's your turn!" : `It's ${this.gameClient.getPlayer(uuid)}'s turn`
-        console.log(text)
-        document.getElementById("turnStatus").textContent = text;
-    }
-
-    setPlayStatus(text) {
-        console.log(text)
-        document.getElementById("playStatus").textContent = text;
+    shuffle() {
+        this.drawPile.style.transform = "scaleX(1)"
+        this.drawPile.style.transition = "transform 0.25s ease-in-out"
+        requestAnimationFrame(() => this.drawPile.style.transform = "scaleX(0)")
+        setTimeout(() => requestAnimationFrame(() => this.drawPile.style.transform = "scaleX(1)"), 500)
     }
 
     // Animations

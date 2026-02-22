@@ -10,6 +10,7 @@ export class GameClient {
         this.isMyTurn = false
         this.lastTypePlayed = ""
         this.lastTypeDrawn = ""
+        this.drawPileLength = 0
     }
 
     onMessage(type, payload) {
@@ -17,25 +18,35 @@ export class GameClient {
             case "deal":
                 this.initialiseHand(payload)
                 break
+
             case "nextturn":
                 this.newTurn(payload.uuid)
-                this.dispatchEvent("newturn", { ...payload, username: this.players.get(payload.uuid) })
                 break
+
             case "playcard":
                 this.lastTypePlayed = payload.card.cardType
                 this.dispatchEvent("playcard", { ...payload, username: this.players.get(payload.uuid) })
             case "allownope":
                 this.configureCardPlayability(payload.allowNope)
                 break
+
             case "requestinput":
                 this.requestInput(payload)
                 break
-            case "show":
+
             case "give":
             case "receive":
+            case "show":
                 this.dispatchEvent(type, payload)
+                this.configureCardPlayability(false)
                 break
+
+            case "shuffle":
+                this.dispatchEvent("shuffle")
+                break
+
             case "drawcard":
+                this.drawPileLength = payload.length
                 if (payload.uuid === this.uuid) this.onDrawCard(payload.card)
                 this.dispatchEvent("draw", payload)
                 this.configureCardPlayability(false)
@@ -43,27 +54,27 @@ export class GameClient {
         }
     }
 
-    initialiseHand(cards) {
-        this.hand = new Hand(cards)
-        this.dispatchEvent("deal", this.hand.toObject())
+    initialiseHand(payload) {
+        this.hand = new Hand(payload.hand)
+        this.dispatchEvent("deal", { hand: this.hand.toObject(), length: payload.length })
     }
 
     newTurn(uuid) {
         this.currentPlayerId = uuid
         this.isMyTurn = this.currentPlayerId === this.uuid
+        this.dispatchEvent("newturn", { uuid })
 
-        this.dispatchEvent("newturn", { currentPlayerId: uuid, isMyTurn: this.isMyTurn })
-
+        this.lastTypeDrawn = ""
         this.configureCardPlayability()
     }
 
-    configureCardPlayability(allowNope = false) {
+    configureCardPlayability(coolingDown = false) {
         const defaultPlayability = this.isMyTurn
             && this.lastTypeDrawn !== "exploding"
             && this.lastTypePlayed !== "exploding"
 
         const catPlayability = (catType) => (this.hand.has(catType, 2)
-            || (this.hand.has(catType) && this.lastTypePlayed === catType))
+            || (coolingDown && this.hand.has(catType) && this.lastTypePlayed === catType))
 
         const playableCards = {
             attack: defaultPlayability,
@@ -76,7 +87,7 @@ export class GameClient {
             exploding: this.lastTypeDrawn === "exploding",
             favor: defaultPlayability,
             future: defaultPlayability,
-            nope: allowNope && (!this.isMyTurn || this.lastTypePlayed === "nope"),
+            nope: coolingDown && (!this.isMyTurn || this.lastTypePlayed === "nope"),
             shuffle: defaultPlayability,
             skip: defaultPlayability,
         }
@@ -97,7 +108,7 @@ export class GameClient {
                 this.dispatchEvent("requestinput", { input: "target", players: this.players })
                 break
             case "defuse":
-                this.dispatchEvent("requestinput", { input: "insertPosition", players: this.players })
+                this.dispatchEvent("requestinput", { input: "position", length: this.drawPileLength })
                 break
         }
         this.lastTypePlayed = card.cardType
