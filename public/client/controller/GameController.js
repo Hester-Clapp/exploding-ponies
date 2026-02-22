@@ -393,7 +393,7 @@ export class GameController {
     onWin(event) {
         const { uuid } = event.detail
         this.setWinStatus(uuid)
-        this.setPlayStatus("Exiting to lobby in 5 seconds...")
+        setTimeout(() => this.setPlayStatus("Exiting to lobby..."), 3000)
         setTimeout(() => this.leaveGame(), 5000)
     }
 

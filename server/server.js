@@ -33,7 +33,6 @@ async function handle(req) {
     }
 
     if (pathname === "/join" && req.headers.get("upgrade") === "websocket") {
-        console.log("Received request to join room");
         const { socket, response } = Deno.upgradeWebSocket(req);
         const roomId = searchParams.get("roomId");
         const uuid = searchParams.get("uuid");
@@ -51,7 +50,6 @@ async function handle(req) {
     }
 
     if (req.method === "PUT" && pathname === "/edit") {
-        console.log("Received request to edit room");
         const roomId = searchParams.get("roomId");
         const room = roomHandler.getRoom(roomId)
         const players = searchParams.get("players");

@@ -143,7 +143,7 @@ export class GameClient {
     }
 
     leaveGame() {
-        this.send("leave")
+        this.socket.close()
     }
 
     onDrawCard(card) {

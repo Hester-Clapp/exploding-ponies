@@ -10,8 +10,10 @@ export class RoomHandler {
         this.sockets = new Set();
     }
 
-    createRoom() {
-        const roomId = String(Math.floor(1000 + 9000 * Math.random()));
+    createRoom(range = 1000) {
+        const roomId = String(Math.floor(1000 + range * Math.random()));
+        if (this.rooms.has(roomId)) return this.createRoom(range + 1000)
+
         const room = new RoomServer(roomId, this.userHandler);
         this.rooms.set(roomId, room);
 
