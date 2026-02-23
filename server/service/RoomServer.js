@@ -154,6 +154,7 @@ export class RoomServer {
     }
 
     addBots() {
+        const bots = []
         for (let i = this.sockets.size; i < this.totalCapacity; i++) {
             const username = getPonyName()
             const uuid = this.userHandler.add(username)
@@ -162,12 +163,17 @@ export class RoomServer {
             const socket = bot.socket
             this.bindSocketEventListeners(socket, false)
             this.sockets.set(uuid, socket)
+
+            bots.push(bot)
         }
+        return bots;
     }
 
     startGameServer() {
-        this.addBots()
-        this.gameServer = new GameServer(this.getPlayers(), this.sockets, this.decks, this.cooldown);
+        const bots = this.addBots()
+        const players = this.getPlayers()
+        bots.forEach(bot => bot.initialisePlayers(players))
+        this.gameServer = new GameServer(players, this.sockets, this.decks, this.cooldown);
         this.gameServer.allReady().then(() => {
             this.gameServer.deal();
         })

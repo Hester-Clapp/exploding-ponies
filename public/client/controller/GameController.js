@@ -120,9 +120,9 @@ export class GameController {
 
     setDrawPileHeight(length) {
         if (length === 0) {
-            this.drawPile.style.display = "none"
+            this.drawPile.style.opacity = "0"
         } else {
-            this.drawPile.style.display = "block"
+            this.drawPile.style.opacity = "1"
         }
         this.drawPile.style["box-shadow"] = `0 ${length}px 0 0.25rem #ddd`
     }
@@ -332,6 +332,8 @@ export class GameController {
 
     giveCard(event) {
         const { card, to } = event.detail
+
+        console.log(card, to)
 
         const element = document.querySelector(`.cardGroup.${card.cardType}`).firstElementChild
         const end = document.querySelector(`#otherPlayers .player${to} .hand`)

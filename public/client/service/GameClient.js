@@ -8,15 +8,13 @@ export class GameClient {
 
         this.players = new Map()
         for (const [uuid, username] of players.entries()) {
-            this.players.set(uuid, { username, isAlive: false })
+            this.players.set(uuid, { username, isAlive: true })
         }
 
         this.isMyTurn = false
         this.lastTypePlayed = ""
         this.lastTypeDrawn = ""
         this.drawPileLength = 0
-
-        console.log(this.players)
     }
 
     onMessage(type, payload) {
@@ -83,6 +81,7 @@ export class GameClient {
         this.isMyTurn = this.currentPlayerId === this.uuid
         this.dispatchEvent("newturn", { uuid })
 
+        this.lastTypePlayed = ""
         this.lastTypeDrawn = ""
         this.configureCardPlayability()
     }
@@ -106,16 +105,17 @@ export class GameClient {
             exploding: this.lastTypeDrawn === "exploding",
             favor: defaultPlayability,
             future: defaultPlayability,
-            nope: coolingDown && (!this.isMyTurn || this.lastTypePlayed === "nope"),
+            nope: coolingDown && (!this.isMyTurn || this.lastTypePlayed === "nope") && this.lastTypePlayed !== "defuse" && this.lastTypePlayed !== "exploding",
             shuffle: defaultPlayability,
             skip: defaultPlayability,
         }
         this.dispatchEvent("enablecard", playableCards)
+        return playableCards
     }
 
     playCard(card) {
         this.send("playcard", card)
-        this.hand.take(card)
+        this.hand.take(card.cardType)
         switch (card.cardType) {
             case "cat1":
             case "cat2":
@@ -124,10 +124,10 @@ export class GameClient {
             case "cat5":
                 if (this.lastTypePlayed !== card.cardType) break // Only ask for input after the second cat
             case "favor":
-                this.dispatchEvent("requestinput", { input: "target", players: this.players })
+                this.requestInput({ input: "target", players: this.players })
                 break
             case "defuse":
-                this.dispatchEvent("requestinput", { input: "position", length: this.drawPileLength })
+                this.requestInput({ input: "position", length: this.drawPileLength })
                 break
         }
         this.lastTypePlayed = card.cardType
@@ -158,9 +158,7 @@ export class GameClient {
     }
 
     requestInput(payload) {
-        if (payload.input === "cardType" && this.lastTypePlayed === "favor") {
-            this.dispatchEvent("requestinput", payload)
-        }
+        this.dispatchEvent("requestinput", payload)
     }
 
     getPlayer(uuid = this.currentPlayerId) {
