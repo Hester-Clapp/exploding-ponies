@@ -13,8 +13,7 @@ export class RoomServer {
         this.sockets = new Map();
         this.hostQueue = []
 
-        this.totalCapacity = 4; // All players including bots
-        this.playerCapacity = 4; // Only human players
+        this.capacity = 4;
         this.decks = 1;
         this.cooldown = 3;
     }
@@ -23,24 +22,18 @@ export class RoomServer {
         this.close = callback;
     }
 
-    setTotalCapacity(capacity) {
-        this.totalCapacity = Math.min(Math.max(capacity, 1), 5);
-        // this.setPlayerCapacity(this.playerCapacity); // Ensure player capacity is not greater than total capacity
+    setCapacity(capacity) {
+        this.capacity = Math.min(Math.max(capacity, 1), 5);
     }
 
-    setPlayerCapacity(capacity) {
-        this.playerCapacity = Math.min(Math.max(capacity, 1), this.totalCapacity);
-    }
-
-    edit(players, bots, decks, cooldown) {
-        this.setTotalCapacity(players);
-        this.setPlayerCapacity(players - bots);
+    edit(players, decks, cooldown) {
+        this.setCapacity(players);
         this.decks = decks;
         this.cooldown = cooldown;
     }
 
     get isFull() {
-        return this.sockets.size >= this.playerCapacity;
+        return this.sockets.size >= this.capacity;
     }
 
     getPlayers() {
@@ -87,8 +80,7 @@ export class RoomServer {
 
         if (socket.user.uuid === this.hostQueue[0]) { // Player is host
             this.send(socket, "promote", {
-                players: this.playerCapacity,
-                bots: this.totalCapacity - this.playerCapacity,
+                players: this.capacity,
                 decks: this.decks
             })
         }
@@ -134,8 +126,7 @@ export class RoomServer {
         if (this.hostQueue.length > 0 && user.uuid !== this.hostQueue[0]) { // Host left, promote new host
             const newHost = this.sockets.get(this.hostQueue[0])
             this.send(newHost, "promote", {
-                players: this.playerCapacity,
-                bots: this.totalCapacity - this.playerCapacity,
+                players: this.capacity,
                 decks: this.decks
             })
         }
@@ -157,7 +148,7 @@ export class RoomServer {
 
     addBots() {
         const bots = []
-        for (let i = this.sockets.size; i < this.totalCapacity; i++) {
+        for (let i = this.sockets.size; i < this.capacity; i++) {
             const username = getPonyName()
             const uuid = this.userHandler.add(username)
             const bot = new Bot(uuid, username)
@@ -197,9 +188,8 @@ export class RoomServer {
     expose() {
         return {
             roomId: this.roomId,
-            capacity: this.totalCapacity,
+            capacity: this.capacity,
             numPlayers: this.sockets.size,
-            numBots: this.totalCapacity - this.playerCapacity,
             decks: this.decks,
             cooldown: this.cooldown,
         }

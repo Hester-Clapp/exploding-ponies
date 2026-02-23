@@ -77,16 +77,14 @@ export class RoomController {
         const controls = await fetch("../../resources/pages/host.html").then(res => res.text())
         document.getElementById("hostControls").innerHTML = controls
 
-        document.querySelector("form").addEventListener("submit", async (e) => {
-            e.preventDefault();
+        async function editRoom(roomId) {
             const fields = {
-                numPlayers: document.getElementById("numPlayers"),
-                numBots: document.getElementById("numBots"),
+                capacity: document.getElementById("capacity"),
                 decks: document.getElementById("decks"),
                 cooldown: document.getElementById("cooldown"),
             }
 
-            const url = `/edit?roomId=${this.roomId}&players=${fields.numPlayers.value}&bots=${fields.numBots.value}&decks=${fields.decks.value}&cooldown=${fields.cooldown.value}`
+            const url = `/edit?roomId=${roomId}&capacity=${fields.capacity.value}&decks=${fields.decks.value}&cooldown=${fields.cooldown.value}`
             const actual = await fetch(url, { method: "PUT" }).then(res => res.json());
 
             for (const name in fields) {
@@ -94,10 +92,18 @@ export class RoomController {
                 fields[name].nextElementSibling.textContent = actual[name]
             }
 
+            return actual
+        }
+
+        document.querySelector("form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const actual = await editRoom(this.roomId)
             this.cooldown = actual.cooldown
         });
 
-        document.getElementById("start").addEventListener("click", async (e) => {
+        document.getElementById("start").addEventListener("click", async () => {
+            const actual = await editRoom(this.roomId)
+            this.cooldown = actual.cooldown
             this.roomClient.startGame()
         })
     }
