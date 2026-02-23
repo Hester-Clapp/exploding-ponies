@@ -1,5 +1,5 @@
 import { loadPage } from './pageLoader.js';
-import { getPonyName } from '../service/ponyNameGenerator.js';
+import { getPonyName } from '../../common/ponyNameGenerator.js';
 
 export class HomeController {
     res

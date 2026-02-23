@@ -15,6 +15,8 @@ export class GameClient {
         this.lastTypePlayed = ""
         this.lastTypeDrawn = ""
         this.drawPileLength = 0
+
+        console.log(this.players)
     }
 
     onMessage(type, payload) {

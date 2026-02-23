@@ -11,7 +11,7 @@ async function handle(req) {
     const { pathname, searchParams } = url;
 
     if (req.method === "POST" && pathname === "/play") {
-        const uuid = userHandler.add(searchParams);
+        const uuid = userHandler.add(searchParams.get("username"));
         return json({ uuid }, 201);
     }
 
@@ -76,5 +76,6 @@ function json(data, status = 200) {
 
 if (import.meta.main) {
     console.log("Starting server...")
-    Deno.serve(handle, { port: Deno.env.get("PORT") || 3000 });
+    // Deno.serve(handle, { port: Deno.env.get("PORT") || 3000 });
+    Deno.serve(handle, { port: 3000 });
 }

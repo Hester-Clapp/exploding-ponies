@@ -23,9 +23,11 @@ export class GameServer {
         this.sockets = sockets
 
         for (const socket of sockets.values()) {
-            socket.isReady = new Promise(resolve => {
-                socket.setReady = resolve
-            })
+            if (socket.isHuman) {
+                socket.isReady = new Promise(resolve => {
+                    socket.setReady = resolve
+                })
+            }
         }
     }
 

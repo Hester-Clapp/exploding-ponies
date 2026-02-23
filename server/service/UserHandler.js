@@ -4,9 +4,7 @@ export class UserHandler {
         this.users = new Map();
     }
 
-    add(params) {
-        const username = params.get("username") || "Anon";
-
+    add(username) {
         const uuid = crypto.randomUUID();
         this.users.set(uuid, new User(uuid, username));
 
@@ -36,7 +34,7 @@ export class UserHandler {
     }
 }
 
-class User {
+export class User {
     constructor(uuid, username) {
         this.uuid = uuid;
         this.username = username;

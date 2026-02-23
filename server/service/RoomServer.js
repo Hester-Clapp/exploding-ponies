@@ -1,4 +1,6 @@
 import { SocketMessage } from "../../public/common/SocketMessage.js"
+import { Bot } from "../../public/common/Bot.js"
+import { getPonyName } from "../../public/common/ponyNameGenerator.js"
 import { GameServer } from "./GameServer.js"
 
 export class RoomServer {
@@ -49,38 +51,42 @@ export class RoomServer {
         return players
     }
 
-    async openSocket(ws, uuid) {
+    openSocket(socket, uuid) {
         if (this.isFull) {
-            ws.close(1000, "Room is full");
+            socket.close(1000, "Room is full");
             return;
         }
 
-        this.sockets.set(uuid, ws);
+        this.sockets.set(uuid, socket);
         this.hostQueue.push(uuid)
 
         const user = this.userHandler.get(uuid);
-        ws.user = user
+        socket.user = user
+        socket.isHuman = true
 
-        this.bound = {
-            open: this.onOpen.bind(this, ws),
-            message: this.onMessage.bind(this),
-            close: this.onClose.bind(this, ws)
-        }
-
-        ws.addEventListener("open", this.bound.open)
-        ws.addEventListener("message", this.bound.message)
-        ws.addEventListener("close", this.bound.close, { once: true })
+        this.bindSocketEventListeners(socket)
     }
 
-    onOpen(ws) {
-        if (!ws.user.expose) return
+    bindSocketEventListeners(socket, isHuman = true) {
+        const controller = new AbortController()
+        socket.addEventListener("message", (e) => this.onMessage(e), { signal: controller.signal })
+        socket.addEventListener("close", () => this.onClose(socket, controller), { signal: controller.signal })
+        if (isHuman) {
+            socket.addEventListener("open", () => this.onOpen(socket), { signal: controller.signal })
+        } else {
+            this.onOpen(socket)
+        }
+    }
 
-        this.send(ws, "init", this.getPlayers());
-        this.publish("join", ws.user.expose(), ws.user.uuid);
-        console.log(`${ws.user.username} has joined room ${this.roomId}`)
+    onOpen(socket) {
+        if (!socket.user.expose) return
 
-        if (ws.user.uuid === this.hostQueue[0]) { // Player is host
-            this.send(ws, "promote", {
+        this.send(socket, "init", this.getPlayers());
+        this.publish("join", socket.user.expose(), socket.user.uuid);
+        console.log(`${socket.user.username} has joined room ${this.roomId}`)
+
+        if (socket.user.uuid === this.hostQueue[0]) { // Player is host
+            this.send(socket, "promote", {
                 players: this.playerCapacity,
                 bots: this.totalCapacity - this.playerCapacity,
                 decks: this.decks
@@ -115,14 +121,13 @@ export class RoomServer {
         }
     }
 
-    onClose(ws) {
-        const user = ws.user
+    onClose(socket, controller) {
+        const user = socket.user
         const username = user?.username || "";
         console.log(`${username} has left room ${this.roomId}`);
         this.publish("leave", user.expose());
         this.gameServer?.onLeave(user.uuid)
 
-        for (const event in this.bound) ws.removeEventListener(event, this.bound[event])
         this.sockets.delete(user.uuid);
 
         this.hostQueue = this.hostQueue.filter(id => id !== user.uuid)
@@ -139,6 +144,8 @@ export class RoomServer {
             console.log(`No players left, closing room ${this.roomId}`);
             this.close();
         }
+
+        controller.abort()
     }
 
     kick(uuid, sender) {
@@ -146,7 +153,20 @@ export class RoomServer {
         this.send(target, "kick", { message: `You were kicked from room ${this.roomId}` }, sender)
     }
 
+    addBots() {
+        for (let i = this.sockets.size; i < this.totalCapacity; i++) {
+            const username = getPonyName()
+            const uuid = this.userHandler.add(username)
+            const bot = new Bot(uuid, username)
+
+            const socket = bot.socket
+            this.bindSocketEventListeners(socket, false)
+            this.sockets.set(uuid, socket)
+        }
+    }
+
     startGameServer() {
+        this.addBots()
         this.gameServer = new GameServer(this.getPlayers(), this.sockets, this.decks, this.cooldown);
         this.gameServer.allReady().then(() => {
             this.gameServer.deal();
