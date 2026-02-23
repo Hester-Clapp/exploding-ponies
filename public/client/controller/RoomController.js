@@ -32,7 +32,7 @@ export class RoomController {
     async afterLoad() {
         document.querySelector("h1").textContent = `Room ${this.roomId}`
         const leave = document.getElementById("leave");
-        leave.addEventListener("click", this.leaveRoom.bind(this));
+        leave.addEventListener("click", () => this.leaveRoom(), { once: true });
 
         for (const event in this.eventHandlers) {
             window.addEventListener(event, this.eventHandlers[event])
@@ -41,6 +41,7 @@ export class RoomController {
 
     async leaveRoom() {
         await this.roomClient.leaveRoom()
+        this.roomClient = null
         this.isHost = false;
 
         for (const event in this.eventHandlers) {
@@ -64,7 +65,7 @@ export class RoomController {
             kick.textContent = "Kick";
             kick.addEventListener("click", async () => {
                 await this.roomClient.kickPlayer(uuid);
-            });
+            }, { once: true });
 
             if (this.isHost && uuid !== this.uuid) li.appendChild(kick);
             playerList.appendChild(li);
@@ -105,7 +106,7 @@ export class RoomController {
             const actual = await editRoom(this.roomId)
             this.cooldown = actual.cooldown
             this.roomClient.startGame()
-        })
+        }, { once: true })
     }
 
     startGame(event) {

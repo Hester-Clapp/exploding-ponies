@@ -87,7 +87,6 @@ export class GameServer {
     }
 
     playCard(cardType, uuid) {
-        console.log("Enqueueing", cardType)
         const player = this.gameCtx.getPlayer(uuid)
         if (!player.hand.has(cardType)) {
             console.log(player.hand.types, player.hand.size)
@@ -125,7 +124,6 @@ export class GameServer {
     }
 
     resolveActions() {
-        console.log("Resolving")
         this.publish("resolve", { coolingDown: false })
 
         const actions = this.cardHandler.resolve()
@@ -186,6 +184,7 @@ export class GameServer {
     checkWin() {
         if (this.gameCtx.getPlayer().nextPlayerId === this.gameCtx.currentPlayerId) {
             this.publish("win", { uuid: this.gameCtx.currentPlayerId })
+            setTimeout(() => this.publish("end"), 5000)
         }
     }
 
@@ -200,5 +199,4 @@ export class GameServer {
             }
         }
     }
-
 }

@@ -16,7 +16,8 @@ export class GameController {
             drawcard: this.onDrawCard.bind(this),
             eliminate: this.eliminatePlayer.bind(this),
             eliminated: this.eliminateSelf.bind(this),
-            win: this.onWin.bind(this)
+            win: this.onWin.bind(this),
+            leave: this.leaveGame.bind(this),
         }
     }
 
@@ -25,7 +26,10 @@ export class GameController {
         this.gameClient = gameClient
         this.cooldownTime = cooldownTime
 
-        window.addEventListener("beforeunload", () => this.gameClient.leaveGame())
+        window.addEventListener("beforeunload", () => {
+            this.gameClient.leaveGame()
+            this.gameClient = null
+        }, { once: true })
     }
 
     async afterLoad() {
@@ -34,11 +38,14 @@ export class GameController {
         this.cooldown = document.getElementById("cooldown")
         this.handDisplay = document.getElementById("hand")
 
+        document.getElementById("leave").addEventListener("click", () => this.leaveGame(), { once: true })
+
         this.bound.drawCard = this.gameClient.drawCard.bind(this.gameClient)
         this.drawPile.addEventListener("click", this.bound.drawCard)
 
+        this.eventController = new AbortController()
         for (const event in this.bound) {
-            window.addEventListener(event, this.bound[event])
+            window.addEventListener(event, this.bound[event], { signal: this.eventController.signal })
         }
 
         this.gameClient.send("ready", null)
@@ -218,7 +225,9 @@ export class GameController {
     }
 
     leaveGame() {
-        this.gameClient.leaveGame()
+        this.eventController.abort()
+        this.gameClient?.leaveGame()
+        this.gameClient = null
         loadPage("rooms", this.uuid)
     }
 

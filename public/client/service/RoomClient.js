@@ -17,6 +17,7 @@ export class RoomClient {
             kick: this.onKick.bind(this),
             promote: this.dispatchEvent.bind(this, "promote"),
             start: this.onStart.bind(this),
+            end: this.leaveRoom.bind(this),
         }
     }
 
@@ -40,6 +41,8 @@ export class RoomClient {
 
     async leaveRoom() {
         this.socket.removeEventListener("message", this.bound.message)
+        this.dispatchEvent("leave")
+        this.gameClient = null
 
         await new Promise((resolve) => {
             this.socket.addEventListener("close", resolve, { once: true });
@@ -63,10 +66,11 @@ export class RoomClient {
             case "kick":
             case "promote":
             case "start":
+            case "end":
                 this.bound[type](payload)
                 break
             default:
-                this.gameClient?.onMessage(type, payload)
+                if (this.gameClient) this.gameClient.onMessage(type, payload)
         }
     }
 

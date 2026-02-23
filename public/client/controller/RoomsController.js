@@ -49,7 +49,7 @@ export class RoomsController {
 
         const createButton = document.createElement("button");
         createButton.textContent = "Create Room";
-        createButton.addEventListener("click", this.createRoom.bind(this));
+        createButton.addEventListener("click", this.createRoom.bind(this), { once: true });
         createDiv.appendChild(createButton);
         container.appendChild(createDiv);
 

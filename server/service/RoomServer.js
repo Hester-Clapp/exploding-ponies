@@ -108,6 +108,9 @@ export class RoomServer {
             case "start":
                 this.startGameServer()
                 break
+            case "end":
+                this.send(this.sockets.get(sender), "end")
+                break
             default:
                 this.publish(type, payload);
         }
@@ -135,6 +138,8 @@ export class RoomServer {
             .filter(socket => socket.isHuman).length
         if (remainingHumanPlayers === 0) {
             console.log(`No players left, closing room ${this.roomId}`);
+            this.publish("end")
+            this.gameServer = null
             this.close();
         }
 
