@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std/http/server.ts";
+// import { serve } from "https://deno.land/std/http/server.ts";
 import { serveDir } from "https://deno.land/std/http/file_server.ts";
 import { UserHandler } from "./service/UserHandler.js";
 import { RoomHandler } from "./service/RoomHandler.js";
@@ -74,4 +74,7 @@ function json(data, status = 200) {
     });
 }
 
-serve(handle, { port: 3000 });
+if (import.meta.main) {
+    console.log("Starting server...")
+    Deno.serve(handle, { port: Deno.env.get("PORT") || 3000 });
+}
