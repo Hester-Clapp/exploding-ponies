@@ -38,15 +38,16 @@ export class GameClient {
                 this.requestInput(payload)
                 break
 
-            case "give":
-                this.hand.take(payload.card)
-                this.dispatchEvent(type, payload)
-                this.configureCardPlayability(false)
-                break
-
-            case "receive":
-                this.hand.add(payload.card)
-                this.dispatchEvent(type, payload)
+            case "transfer":
+                if (payload.from === this.uuid) {
+                    this.hand.take(payload.card.cardType)
+                    this.dispatchEvent("give", payload)
+                } else if (payload.to === this.uuid) {
+                    this.hand.add(payload.card)
+                    this.dispatchEvent("receive", payload)
+                } else {
+                    this.dispatchEvent("transfer", payload)
+                }
                 this.configureCardPlayability(false)
                 break
 

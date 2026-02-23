@@ -4,33 +4,19 @@ import { loadPage } from './pageLoader.js';
 export class GameController {
     constructor() {
         this.bound = {
-            onNewTurn: this.onNewTurn.bind(this),
-            renderHand: this.renderHand.bind(this),
-            onPlayCard: this.onPlayCard.bind(this),
-            onRequestInput: this.onRequestInput.bind(this),
-            showFuture: this.showFuture.bind(this),
-            giveCard: this.giveCard.bind(this),
-            receiveCard: this.receiveCard.bind(this),
+            newturn: this.onNewTurn.bind(this),
+            deal: this.renderHand.bind(this),
+            playcard: this.onPlayCard.bind(this),
+            requestinput: this.onRequestInput.bind(this),
+            show: this.showFuture.bind(this),
+            give: this.giveCard.bind(this),
+            receive: this.receiveCard.bind(this),
+            transfer: this.animateTransfer.bind(this),
             shuffle: this.shuffle.bind(this),
-            onDrawCard: this.onDrawCard.bind(this),
-            eliminatePlayer: this.eliminatePlayer.bind(this),
-            eliminateSelf: this.eliminateSelf.bind(this),
-            onWin: this.onWin.bind(this)
-        }
-
-        this.eventHandlers = {
-            newturn: this.bound.onNewTurn,
-            deal: this.bound.renderHand,
-            playcard: this.bound.onPlayCard,
-            requestinput: this.bound.onRequestInput,
-            show: this.bound.showFuture,
-            give: this.bound.giveCard,
-            receive: this.bound.receiveCard,
-            shuffle: this.bound.shuffle,
-            drawcard: this.bound.onDrawCard,
-            eliminate: this.bound.eliminatePlayer,
-            eliminated: this.bound.eliminateSelf,
-            win: this.bound.onWin,
+            drawcard: this.onDrawCard.bind(this),
+            eliminate: this.eliminatePlayer.bind(this),
+            eliminated: this.eliminateSelf.bind(this),
+            win: this.onWin.bind(this)
         }
     }
 
@@ -51,8 +37,8 @@ export class GameController {
         this.bound.drawCard = this.gameClient.drawCard.bind(this.gameClient)
         this.drawPile.addEventListener("click", this.bound.drawCard)
 
-        for (const event in this.eventHandlers) {
-            window.addEventListener(event, this.eventHandlers[event])
+        for (const event in this.bound) {
+            window.addEventListener(event, this.bound[event])
         }
 
         this.gameClient.send("ready", null)
@@ -240,6 +226,8 @@ export class GameController {
         const isMyTurn = uuid === this.uuid
         const text = isMyTurn ? "It's your turn!" : `It's ${this.gameClient.getUsername(uuid)}'s turn`
         document.getElementById("turnStatus").textContent = text;
+        document.querySelector(".player.turn")?.classList?.remove("turn")
+        document.querySelector(`.player${uuid}`)?.classList?.add("turn")
     }
 
     setWinStatus(uuid) {
@@ -413,7 +401,7 @@ export class GameController {
         ghost.style.position = "fixed"
         ghost.style.left = `${startPosition.x}px`
         ghost.style.top = `${startPosition.y}px`
-        ghost.style.transform = `rotate(0deg) scale(1)`
+        // ghost.style.transform = `rotate(0deg) scale(1)`
         document.getElementById("app").appendChild(ghost)
 
         element.style.display = "none"
@@ -463,4 +451,11 @@ export class GameController {
         })
     }
 
+    animateTransfer(event) {
+        const { from, to } = event.detail
+        const fromDiv = document.querySelector(`.player${from} .hand`)
+        const toDiv = document.querySelector(`.player${to} .hand`)
+        const card = fromDiv.firstElementChild
+        this.glide(card, toDiv, 0, 0.5)
+    }
 }

@@ -140,7 +140,9 @@ export class RoomServer {
             })
         }
 
-        if (this.sockets.size === 0) {
+        const remainingHumanPlayers = Array.from(this.sockets.values())
+            .filter(socket => socket.isHuman).length
+        if (remainingHumanPlayers === 0) {
             console.log(`No players left, closing room ${this.roomId}`);
             this.close();
         }

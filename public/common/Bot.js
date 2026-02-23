@@ -100,10 +100,6 @@ export class Bot extends GameClient {
         this.playableCards = super.configureCardPlayability(coolingDown)
     }
 
-    canPlay(type) {
-        return this.hand.has(type) && this.playableCards[type] === true
-    }
-
     // Receive message from server
     onMessage(type, payload) {
         switch (type) {
@@ -125,13 +121,16 @@ export class Bot extends GameClient {
                 this.requestInput(payload)
                 break
 
-            case "give":
-                // this.hand.take(payload.card)
-                this.configureCardPlayability(false)
-                break
-
-            case "receive":
-                // this.hand.add(payload.card)
+            case "transfer":
+                if (payload.from === this.uuid) {
+                    this.hand.take(payload.card.cardType)
+                    this.dispatchEvent("give", payload)
+                } else if (payload.to === this.uuid) {
+                    this.hand.add(payload.card)
+                    this.dispatchEvent("receive", payload)
+                } else {
+                    this.dispatchEvent("transfer", payload)
+                }
                 this.configureCardPlayability(false)
                 break
 
@@ -150,10 +149,6 @@ export class Bot extends GameClient {
             case "show":
                 this.upcomingCards = payload
                 break
-
-            // case "win":
-            //     setTimeout(() => this.socket.close(), 5000)
-            //     break
         }
     }
 
@@ -162,6 +157,10 @@ export class Bot extends GameClient {
         this.startCooldown()
         this.finishCooldown()
         if (this.isMyTurn) this.decidePlay()
+    }
+
+    canPlay(type) {
+        return this.hand.has(type) && this.playableCards[type] === true
     }
 
     playType(type) {
@@ -188,7 +187,7 @@ export class Bot extends GameClient {
                     this.provideInput({ position: this.choosePosition(length) })
                     break
             }
-        }, 1000)
+        }, 500 + 1000 * Math.random())
     }
 
     choosePlayer(players) {
@@ -208,8 +207,8 @@ export class Bot extends GameClient {
     onDrawCard(card) {
         super.onDrawCard(card)
         if (card.cardType === "exploding") {
-            setTimeout(() => this.playType("exploding"), 1000)
-            if (this.hand.has("defuse")) setTimeout(() => this.playType("defuse"), 1500)
+            setTimeout(() => this.playType("exploding"), 500 + 500 * Math.random())
+            if (this.hand.has("defuse")) setTimeout(() => this.playType("defuse"), 1000 + 500 * Math.random())
         }
     }
 
@@ -218,14 +217,11 @@ export class Bot extends GameClient {
         const probability = (this.upcomingCards.length > 0)
             ? (this.upcomingCards[0].cardType === "exploding" ? 1 : 0)
             : this.cardValues.exploding.number / this.drawPileLength
-        console.log(probability, this.desiredProbabilityReduction)
 
         setTimeout(async () => {
             if (probability < this.desiredProbabilityReduction) {
-                console.log("Drawing card")
                 this.drawCard()
             } else {
-                console.log("Deciding on card to play")
                 for (const type of this.hand.types) {
                     if (this.canPlay(type)) {
                         let newProbability
@@ -256,8 +252,6 @@ export class Bot extends GameClient {
                         }
 
                         if (probability - newProbability > this.desiredProbabilityReduction || cardValueSurplus > 0) {
-                            console.log("Playing", type)
-                            console.log(this.hand.types, this.hand.size)
                             const isCat = type.slice(0, 3) === "cat"
                             if (isCat && !this.hand.has(type, 2)) continue
 
@@ -267,7 +261,7 @@ export class Bot extends GameClient {
                             this.startCooldown()
                             await this.cooldown
 
-                            setTimeout(() => this.decidePlay(), 1000)
+                            setTimeout(() => this.decidePlay(), 1000 + 1000 * Math.random())
                         }
                     }
                 }
@@ -275,7 +269,7 @@ export class Bot extends GameClient {
                 // If it gets here, it doesn't like any of its options but will draw anyway
                 this.drawCard()
             }
-        }, 500) // 500 + 1000 * Math.random()
+        }, 500 + 1500 * Math.random())
     }
 
     // Send message from bot to server
@@ -303,7 +297,7 @@ class BackendSocket {
     }
 
     close() {
-        this.trigger("close", this)
+        // this.trigger("close", this)
     }
 
     // What the server does when the bot sends a message
