@@ -167,6 +167,7 @@ export class GameServer {
         }
         if ("shuffle" in changes) this.publish("shuffle")
         if ("draws" in changes) this.publish("draws", { draws: this.gameCtx.draws })
+        if ("deck" in changes) this.publish("deck", { length: this.gameCtx.deck.length })
         if ("show" in changes) this.send(this.gameCtx.currentPlayerId, "show", this.gameCtx.seeFuture())
         if ("transfer" in changes) this.publish("transfer", changes.transfer)
         this.publish("nextturn", { uuid: this.gameCtx.currentPlayerId })

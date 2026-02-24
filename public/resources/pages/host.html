@@ -1,7 +1,7 @@
 <form>
     <div>
         <label for="capacity" title="The number of players in the game, including bots">Players:</label>
-        <input type="range" id="capacity" min="1" max="5" step="1" value="4"
+        <input type="range" id="capacity" min="2" max="6" step="1" value="4"
             oninput="this.nextElementSibling.value = this.value">
         <output>4</output>
     </div>
@@ -16,7 +16,7 @@
         <label for="cooldown"
             title="The time interval (in seconds) between playing a card and its action being committed. Nope cards, defuse cards and stacks of pony cards must be played before this time runs out.">Card
             Cooldown Time:</label>
-        <input type="range" id="cooldown" min="1" max="5" step="1" value="3"
+        <input type="range" id="cooldown" min="1" max="8" step="1" value="3"
             oninput="this.nextElementSibling.value = this.value">
         <output>3</output>
     </div>

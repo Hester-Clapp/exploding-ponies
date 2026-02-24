@@ -10,6 +10,7 @@ export class GameController {
             provideinput: this.onProvideInput.bind(this),
             requestinput: this.onRequestInput.bind(this),
             show: this.showFuture.bind(this),
+            deck: this.onDeckLengthChange.bind(this),
             give: this.giveCard.bind(this),
             receive: this.receiveCard.bind(this),
             transfer: this.animateTransfer.bind(this),
@@ -141,13 +142,14 @@ export class GameController {
 
             window.addEventListener("enablecard", enableCard)
 
-            div.addEventListener("click", () => {
+            div.addEventListener("click", function clickCard() {
                 if (div.classList.contains("enabled")) {
                     div.classList.remove("enabled")
                     window.removeEventListener("enablecard", enableCard)
+                    div.removeEventListener("clic", clickCard)
                     this.playCard(card, div)
                 }
-            }, { once: true })
+            }.bind(this))
         }
 
         return div
@@ -311,6 +313,11 @@ export class GameController {
         } else {
             this.addToPlayerHand(uuid, handSize)
         }
+    }
+
+    onDeckLengthChange(event) {
+        const length = event.detail.length
+        this.setDrawPileHeight(length)
     }
 
     showFuture(event) {

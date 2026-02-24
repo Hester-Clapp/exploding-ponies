@@ -50,7 +50,7 @@ export class AttackAction extends Action {
 }
 
 export class DefuseAction extends Action {
-    changes = { turn: true }
+    changes = { turn: true, deck: true }
     constructor() {
         super("defuse")
         this.inputs = {

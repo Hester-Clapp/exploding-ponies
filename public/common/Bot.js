@@ -9,6 +9,7 @@ export class Bot extends GameClient {
 
         this.username = username
         this.upcomingCards = []
+        this.isAlive = true
 
         // If a bot has the ability to play a card which will reduce the probability of drawing an exploding card by this value, then they will play it
         this.desiredProbabilityReduction = Math.random() * 0.4
@@ -21,7 +22,13 @@ export class Bot extends GameClient {
         this.favorDamping = 0.8 + Math.random() * 0.2
 
         // When the bot feels safe, it may randomly play a nope card with this probability
-        this.nopeLolProbability = Math.random() * 0.1
+        this.nopeLolProbability = Math.random() * 0.4
+
+        // When the bot is targetted but it has a nope card, it will play it with this probability
+        this.nopeDefenceProbability = 0.4 + Math.random() * 0.6
+
+        // When the bot's action is noped, it will play another nope card in response with this probability, given that it has one
+        this.yupProbability = 0.8 + Math.random() * 0.2
 
         // Card value describes how much this bot values having one of each card
         this.cardValues = {
@@ -112,14 +119,23 @@ export class Bot extends GameClient {
                 break
 
             case "playcard":
-                this.players.get(payload.uuid).handSize--
-                this.lastTypePlayed = payload.card.cardType
+                this.onPlayCard(payload)
             case "resolve":
+                clearTimeout(this.nopeTimeout)
                 this.configureCardPlayability(payload.coolingDown)
+                if (payload.coolingDown === true) {
+                    this.nopeTimeout = setTimeout(() => this.decideNope(this.nopeLolProbability), 1000 + 1500 * Math.random())
+                }
                 break
 
             case "requestinput":
                 this.requestInput(payload)
+                break
+
+            case "provideinput":
+                if (payload.target === this.uuid) {
+                    setTimeout(() => this.decideNope(this.nopeDefenceProbability), 1000 + 1500 * Math.random())
+                }
                 break
 
             case "transfer":
@@ -141,17 +157,22 @@ export class Bot extends GameClient {
                 this.players.get(payload.uuid).handSize++
                 this.drawPileLength = payload.length
                 if (payload.uuid === this.uuid) this.onDrawCard(payload.card)
+                this.upcomingCards.shift()
                 this.configureCardPlayability(false)
                 break
 
             case "eliminate":
                 this.lastTypePlayed = ""
                 this.players.get(payload.uuid).isAlive = false
-                // if (payload.uuid === this.uuid) this.eliminateSelf()
+                if (payload.uuid === this.uuid) this.eliminateSelf()
                 break
 
             case "show":
                 this.upcomingCards = payload
+                break
+
+            case "win":
+                this.socket.removeEventListener("send")
                 break
         }
     }
@@ -161,10 +182,6 @@ export class Bot extends GameClient {
         this.startCooldown()
         this.finishCooldown()
         if (this.isMyTurn) this.decidePlay()
-    }
-
-    canPlay(type) {
-        return this.hand.has(type) && this.playableCards[type] === true
     }
 
     playType(type) {
@@ -179,6 +196,7 @@ export class Bot extends GameClient {
 
     requestInput(payload) {
         const { input, players, types, length } = payload
+        console.log(input)
         setTimeout(() => {
             switch (input) {
                 case "target":
@@ -211,6 +229,18 @@ export class Bot extends GameClient {
         return Math.floor(Math.random() * length)
     }
 
+    decideNope(probability) {
+        if (this.canPlay("nope") && Math.random() < probability) {
+            this.playType("nope")
+        }
+    }
+
+    onPlayCard(payload) {
+        this.players.get(payload.uuid).handSize--
+        this.lastCardPlayer = payload.uuid
+        this.lastTypePlayed = payload.card.cardType
+    }
+
     onDrawCard(card) {
         super.onDrawCard(card)
         if (card.cardType === "exploding") {
@@ -218,6 +248,15 @@ export class Bot extends GameClient {
             setTimeout(() => this.playType("exploding"), delay)
             if (this.hand.has("defuse")) setTimeout(() => this.playType("defuse"), 500 + delay)
         }
+    }
+
+    eliminateSelf() {
+        this.isAlive = false
+        this.socket.removeEventListener("send")
+    }
+
+    canPlay(type) {
+        return this.isAlive && this.hand.has(type) && this.playableCards[type] === true
     }
 
     decidePlay() {
@@ -277,7 +316,7 @@ export class Bot extends GameClient {
                 // If it gets here, it doesn't like any of its options but will draw anyway
                 this.drawCard()
             }
-        }, 500 + 1500 * Math.random())
+        }, 1000 + 1500 * Math.random())
     }
 
     // Send message from bot to server
@@ -305,12 +344,16 @@ class BackendSocket {
     }
 
     close() {
-        // this.trigger("close", this)
     }
 
     // What the server does when the bot sends a message
     addEventListener(event, callback) {
         this.handlers.set(event, callback)
+    }
+
+    // What the server does when the bot sends a message
+    removeEventListener(event) {
+        this.handlers.delete(event)
     }
 
     trigger(event, ...args) {

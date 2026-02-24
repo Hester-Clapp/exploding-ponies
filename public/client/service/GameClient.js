@@ -13,6 +13,7 @@ export class GameClient {
 
         this.isMyTurn = false
         this.lastTypePlayed = ""
+        this.lastCardPlayer = ""
         this.lastTypeDrawn = ""
         this.drawPileLength = 0
     }
@@ -29,6 +30,7 @@ export class GameClient {
 
             case "playcard":
                 this.players.get(payload.uuid).handSize--
+                this.lastCardPlayer = payload.uuid
                 this.lastTypePlayed = payload.card.cardType
                 this.dispatchEvent(type, { ...payload, username: this.getUsername(payload.uuid) })
             case "resolve":
@@ -72,9 +74,11 @@ export class GameClient {
                 else this.dispatchEvent(type, payload)
                 break
 
+            case "deck":
             case "shuffle":
             case "show":
             case "win":
+                this.dispatchEvent(type, payload)
                 break
         }
     }
@@ -99,8 +103,18 @@ export class GameClient {
             && this.lastTypeDrawn !== "exploding"
             && this.lastTypePlayed !== "exploding"
 
-        const catPlayability = (catType) => (this.hand.has(catType, 2)
-            || (coolingDown && this.hand.has(catType) && this.lastTypePlayed === catType))
+        const catPlayability = (catType) => (this.hand.has(catType, 2) // You can play if you have 2
+            || (coolingDown
+                && this.lastCardPlayer === this.uuid // Or if you just played one
+                && this.hand.has(catType) // and you have another one
+                && this.lastTypePlayed === catType)) // which is the same
+
+        const nopePlayability = coolingDown // Only play nope during cooldown
+            && this.lastTypePlayed !== "defuse" // Cannot "nope" defuse
+            && this.lastTypePlayed !== "exploding" // Cannot "nope" exploding
+            && this.lastCardPlayer !== this.uuid // Cannot nope yourself
+            && ((this.lastCardPlayer === this.currentPlayerId)  // You can only "nope" if the last card was played by the current player
+                || (this.isMyTurn && this.lastTypePlayed === "nope")) // You can only "yup" another nope
 
         const playableCards = {
             attack: defaultPlayability,
@@ -113,7 +127,7 @@ export class GameClient {
             exploding: this.lastTypeDrawn === "exploding",
             favor: defaultPlayability,
             future: defaultPlayability,
-            nope: coolingDown && (!this.isMyTurn || this.lastTypePlayed === "nope") && this.lastTypePlayed !== "defuse" && this.lastTypePlayed !== "exploding",
+            nope: nopePlayability,
             shuffle: defaultPlayability,
             skip: defaultPlayability,
         }
@@ -139,6 +153,7 @@ export class GameClient {
                 break
         }
         this.lastTypePlayed = card.cardType
+        this.lastCardPlayer = this.uuid
         if (card.cardType === "defuse") this.lastTypeDrawn = ""
     }
 
