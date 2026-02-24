@@ -92,7 +92,7 @@ export class Bot extends GameClient {
     initialisePlayers(players) {
         this.players = new Map()
         for (const player of players.values()) {
-            this.players.set(player.uuid, { username: player.username, isAlive: true })
+            this.players.set(player.uuid, { username: player.username, isAlive: true, handSize: 8 })
         }
     }
 
@@ -112,6 +112,7 @@ export class Bot extends GameClient {
                 break
 
             case "playcard":
+                this.players.get(payload.uuid).handSize--
                 this.lastTypePlayed = payload.card.cardType
             case "resolve":
                 this.configureCardPlayability(payload.coolingDown)
@@ -131,10 +132,13 @@ export class Bot extends GameClient {
                 } else {
                     this.dispatchEvent("transfer", payload)
                 }
+                this.players.get(payload.from).handSize--
+                this.players.get(payload.to).handSize++
                 this.configureCardPlayability(false)
                 break
 
             case "drawcard":
+                this.players.get(payload.uuid).handSize++
                 this.drawPileLength = payload.length
                 if (payload.uuid === this.uuid) this.onDrawCard(payload.card)
                 this.configureCardPlayability(false)
@@ -191,7 +195,10 @@ export class Bot extends GameClient {
     }
 
     choosePlayer(players) {
-        const filtered = Array.from(players.keys()).filter(uuid => players.get(uuid).isAlive && (uuid !== this.uuid))
+        const filtered = Array.from(players.keys())
+            .filter(uuid => uuid !== this.uuid)
+            .filter(uuid => players.get(uuid).isAlive)
+            .filter(uuid => players.get(uuid).handSize > 0)
         const index = Math.floor(Math.random() * filtered.length)
         return filtered[index]
     }
@@ -207,8 +214,9 @@ export class Bot extends GameClient {
     onDrawCard(card) {
         super.onDrawCard(card)
         if (card.cardType === "exploding") {
-            setTimeout(() => this.playType("exploding"), 500 + 500 * Math.random())
-            if (this.hand.has("defuse")) setTimeout(() => this.playType("defuse"), 1000 + 500 * Math.random())
+            const delay = 1000 + 500 * Math.random()
+            setTimeout(() => this.playType("exploding"), delay)
+            if (this.hand.has("defuse")) setTimeout(() => this.playType("defuse"), 500 + delay)
         }
     }
 

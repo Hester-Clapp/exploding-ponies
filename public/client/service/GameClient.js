@@ -8,7 +8,7 @@ export class GameClient {
 
         this.players = new Map()
         for (const [uuid, username] of players.entries()) {
-            this.players.set(uuid, { username, isAlive: true })
+            this.players.set(uuid, { username, handSize: 8, isAlive: true })
         }
 
         this.isMyTurn = false
@@ -28,6 +28,7 @@ export class GameClient {
                 break
 
             case "playcard":
+                this.players.get(payload.uuid).handSize--
                 this.lastTypePlayed = payload.card.cardType
                 this.dispatchEvent(type, { ...payload, username: this.getUsername(payload.uuid) })
             case "resolve":
@@ -36,6 +37,10 @@ export class GameClient {
 
             case "requestinput":
                 this.requestInput(payload)
+                break
+
+            case "provideinput":
+                if (!this.isMyTurn) this.dispatchEvent(type, payload)
                 break
 
             case "transfer":
@@ -48,10 +53,13 @@ export class GameClient {
                 } else {
                     this.dispatchEvent("transfer", payload)
                 }
+                this.players.get(payload.from).handSize--
+                this.players.get(payload.to).handSize++
                 this.configureCardPlayability(false)
                 break
 
             case "drawcard":
+                this.players.get(payload.uuid).handSize++
                 this.drawPileLength = payload.length
                 if (payload.uuid === this.uuid) this.onDrawCard(payload.card)
                 this.dispatchEvent(type, payload)
@@ -67,7 +75,6 @@ export class GameClient {
             case "shuffle":
             case "show":
             case "win":
-                this.dispatchEvent(type, payload)
                 break
         }
     }

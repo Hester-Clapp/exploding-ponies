@@ -7,6 +7,7 @@ export class GameController {
             newturn: this.onNewTurn.bind(this),
             deal: this.renderHand.bind(this),
             playcard: this.onPlayCard.bind(this),
+            provideinput: this.onProvideInput.bind(this),
             requestinput: this.onRequestInput.bind(this),
             show: this.showFuture.bind(this),
             give: this.giveCard.bind(this),
@@ -289,6 +290,12 @@ export class GameController {
                     .then(position => this.gameClient.provideInput({ position }))
                 break
         }
+    }
+
+    onProvideInput(event) {
+        const { target, cardType } = event.detail
+        if (cardType === "favor" && target === this.uuid) return; // Message is already handled
+        this.setPlayStatus(`${this.gameClient.getUsername()} chose to target ${target === this.uuid ? "you!" : this.gameClient.getUsername(target)}`)
     }
 
     onDrawCard(event) {

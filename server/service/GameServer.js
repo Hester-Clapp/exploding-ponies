@@ -113,6 +113,7 @@ export class GameServer {
                 const index = Math.floor(Math.random() * cards.length)
                 this.provideInput("cardType", cards[index].cardType)
             }
+            this.publish("provideinput", { target: value, cardType: this.gameCtx.deck.lastTypePlayed })
         }
 
         if (this.pendingInputs.has(input)) {
