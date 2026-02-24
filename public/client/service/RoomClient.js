@@ -40,8 +40,8 @@ export class RoomClient {
     }
 
     async leaveRoom() {
+        this.dispatchEvent("leaveRoom")
         this.socket.removeEventListener("message", this.bound.message)
-        this.dispatchEvent("leave")
         this.gameClient = null
 
         await new Promise((resolve) => {
@@ -96,6 +96,8 @@ export class RoomClient {
     }
 
     onKick() {
+        this.dispatchEvent("kick")
+        alert("You were kicked from this room")
         this.leaveRoom();
     }
 

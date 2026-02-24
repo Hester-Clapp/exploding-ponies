@@ -16,6 +16,7 @@ export class RoomController {
             drawplayerlist: this.bound.drawPlayerList,
             promote: this.bound.promote,
             beforeunload: this.bound.leaveRoom,
+            kick: this.bound.leaveRoom,
             start: this.bound.startGame,
         }
     }
@@ -107,6 +108,10 @@ export class RoomController {
             this.cooldown = actual.cooldown
             this.roomClient.startGame()
         }, { once: true })
+    }
+
+    onKick() {
+        alert("You were kicked from this room")
     }
 
     startGame(event) {
