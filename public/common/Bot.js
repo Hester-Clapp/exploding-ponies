@@ -22,7 +22,7 @@ export class Bot extends GameClient {
         this.favorDamping = 0.8 + Math.random() * 0.2
 
         // When the bot feels safe, it may randomly play a nope card with this probability
-        this.nopeLolProbability = Math.random() * 0.4
+        this.nopeLolProbability = Math.random() * 0.2
 
         // When the bot is targetted but it has a nope card, it will play it with this probability
         this.nopeDefenceProbability = 0.4 + Math.random() * 0.6
@@ -186,7 +186,7 @@ export class Bot extends GameClient {
 
     playType(type) {
         if (this.canPlay(type)) {
-            this.playCard(this.hand.get(type))
+            super.playCard(this.hand.get(type))
         }
     }
 
@@ -196,7 +196,6 @@ export class Bot extends GameClient {
 
     requestInput(payload) {
         const { input, players, types, length } = payload
-        console.log(input)
         setTimeout(() => {
             switch (input) {
                 case "target":
@@ -275,7 +274,7 @@ export class Bot extends GameClient {
                         let cardValueSurplus = -this.cardValues[type].value
                         switch (type) {
                             case "nope":
-                                break
+                                break // Handled separately
 
                             case "attack":
                             case "skip":

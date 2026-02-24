@@ -143,13 +143,10 @@ export class GameServer {
             Object.values(action.inputs)
         )
 
-        console.log(Array.from(this.pendingInputs.entries()))
-
         Promise.all(inputPromises).then(() => this.playActions(actions))
     }
 
     async playActions(actions) {
-        console.log("Playing", actions)
         this.cachedInputs.clear()
         this.pendingInputs.clear()
 

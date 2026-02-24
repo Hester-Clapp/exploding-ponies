@@ -23,7 +23,7 @@ export class RoomServer {
     }
 
     setCapacity(capacity) {
-        this.capacity = Math.min(Math.max(capacity, 1), 5);
+        this.capacity = Math.min(Math.max(capacity, 2), 6);
     }
 
     edit(players, decks, cooldown) {
@@ -94,16 +94,16 @@ export class RoomServer {
                 this.kick(payload.uuid, sender)
                 break
             case "ready":
-                this.gameServer.setPlayerReady(sender)
+                this.gameServer?.setPlayerReady(sender)
                 break
             case "playcard":
-                this.gameServer.playCard(payload.cardType, sender)
+                this.gameServer?.playCard(payload.cardType, sender)
                 break
             case "provideinput":
-                for (const input in payload) this.gameServer.provideInput(input, payload[input])
+                for (const input in payload) this.gameServer?.provideInput(input, payload[input])
                 break
             case "drawcard":
-                this.gameServer.drawCard(sender)
+                this.gameServer?.drawCard(sender)
                 break
             case "start":
                 this.startGameServer()

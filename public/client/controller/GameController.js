@@ -467,6 +467,8 @@ export class GameController {
         bar.style.background = "blue"
 
         window.requestAnimationFrame(() => {
+            bar.offsetHeight // Force reflow
+
             bar.style.transition = `width ${this.cooldownTime}s linear, background-color ${this.cooldownTime}s linear`
             bar.style.width = "0"
             bar.style.background = "orange"

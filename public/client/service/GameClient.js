@@ -93,8 +93,8 @@ export class GameClient {
         this.isMyTurn = this.currentPlayerId === this.uuid
         this.dispatchEvent("newturn", { uuid })
 
-        this.lastTypePlayed = ""
-        this.lastTypeDrawn = ""
+        if (this.lastTypePlayed === "exploding") this.lastTypePlayed = ""
+        if (this.lastTypeDrawn === "exploding") this.lastTypeDrawn = ""
         this.configureCardPlayability()
     }
 
@@ -123,7 +123,7 @@ export class GameClient {
             cat3: defaultPlayability && catPlayability("cat3"),
             cat4: defaultPlayability && catPlayability("cat4"),
             cat5: defaultPlayability && catPlayability("cat5"),
-            defuse: this.isMyTurn && this.lastTypePlayed === "exploding",
+            defuse: this.isMyTurn && this.lastTypePlayed === "exploding" && this.lastCardPlayer === this.uuid,
             exploding: this.lastTypeDrawn === "exploding",
             favor: defaultPlayability,
             future: defaultPlayability,
@@ -136,22 +136,26 @@ export class GameClient {
     }
 
     playCard(card) {
-        this.send("playcard", card)
-        this.hand.take(card.cardType)
         switch (card.cardType) {
             case "cat1":
             case "cat2":
             case "cat3":
             case "cat4":
             case "cat5":
+                if (!this.lastTypePlayed) break // Do not request target for the first cat of your turn
                 if (this.lastTypePlayed !== card.cardType) break // Only ask for input after the second cat
             case "favor":
                 this.requestInput({ input: "target", players: this.players })
                 break
+
             case "defuse":
                 this.requestInput({ input: "position", length: this.drawPileLength })
                 break
         }
+
+        this.send("playcard", card)
+        this.hand.take(card.cardType)
+
         this.lastTypePlayed = card.cardType
         this.lastCardPlayer = this.uuid
         if (card.cardType === "defuse") this.lastTypeDrawn = ""
