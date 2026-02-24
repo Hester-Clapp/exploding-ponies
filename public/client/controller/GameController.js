@@ -424,19 +424,22 @@ export class GameController {
         ghost.style.position = "fixed"
         ghost.style.left = `${startPosition.x}px`
         ghost.style.top = `${startPosition.y}px`
-        // ghost.style.transform = `rotate(0deg) scale(1)`
+        ghost.style.transition = "none"
         document.getElementById("app").appendChild(ghost)
 
         element.style.display = "none"
         newParent.appendChild(element)
 
         return new Promise(resolve => {
-            ghost.style.transition = `all 0.5s`
-            setTimeout(() => {
+            ghost.offsetHeight // Force reflow
+
+            ghost.style.transition = `left 0.5s ease-out, top 0.5s ease-out, transform 0.5s ease-out`
+
+            ghost.addEventListener("transitionend", () => {
                 element.style.display = ghost.style.display
                 ghost.remove()
                 resolve()
-            }, 500)
+            }, { once: true })
 
             requestAnimationFrame(() => {
                 ghost.style.left = `calc(${endPosition.x}px + ${offset.x})`
@@ -459,7 +462,7 @@ export class GameController {
         const bar = this.cooldown.firstElementChild
 
         this.cooldown.style.opacity = "1"
-        bar.style.transition = ""
+        bar.style.transition = "none"
         bar.style.width = "100%"
         bar.style.background = "blue"
 

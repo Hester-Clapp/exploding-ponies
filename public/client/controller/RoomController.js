@@ -28,16 +28,18 @@ export class RoomController {
         this.roomClient = new RoomClient(uuid);
         await this.roomClient.joinRoom(roomId)
 
-    }
-
-    async afterLoad() {
-        document.querySelector("h1").textContent = `Room ${this.roomId}`
-        const leave = document.getElementById("leave");
-        leave.addEventListener("click", () => this.leaveRoom(), { once: true });
-
         for (const event in this.eventHandlers) {
             window.addEventListener(event, this.eventHandlers[event])
         }
+
+        this.loaded = new Promise(resolve => this.onLoad = resolve)
+    }
+
+    async afterLoad() {
+        this.onLoad()
+        document.querySelector("h1").textContent = `Room ${this.roomId}`
+        const leave = document.getElementById("leave");
+        leave.addEventListener("click", () => this.leaveRoom(), { once: true });
     }
 
     async leaveRoom() {
@@ -52,7 +54,9 @@ export class RoomController {
         loadPage("rooms", this.uuid);
     }
 
-    drawPlayerList() {
+    async drawPlayerList() {
+        await this.loaded
+
         const playerList = document.getElementById("playerList");
         playerList.innerHTML = "";
 
@@ -74,6 +78,8 @@ export class RoomController {
     }
 
     async promote() {
+        await this.loaded
+
         this.isHost = true;
 
         const controls = await fetch("../../resources/pages/host.html").then(res => res.text())

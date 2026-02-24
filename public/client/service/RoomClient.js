@@ -59,18 +59,10 @@ export class RoomClient {
     onMessage(event) {
         const { type, payload } = SocketMessage.fromEvent(event);
         console.log(type)
-        switch (type) {
-            case "init":
-            case "join":
-            case "leave":
-            case "kick":
-            case "promote":
-            case "start":
-            case "end":
-                this.bound[type](payload)
-                break
-            default:
-                if (this.gameClient) this.gameClient.onMessage(type, payload)
+        if (type in this.bound) {
+            this.bound[type](payload)
+        } else {
+            if (this.gameClient) this.gameClient.onMessage(type, payload)
         }
     }
 
@@ -84,13 +76,11 @@ export class RoomClient {
     }
 
     playerJoin(user) {
-        console.log(`${user.username} has joined the game`);
         this.players.set(user.uuid, user.username);
         this.dispatchEvent("drawplayerlist")
     }
 
     playerLeave(user) {
-        console.log(`${user.username} has left the game`);
         this.players.delete(user.uuid);
         this.dispatchEvent("drawplayerlist")
     }
