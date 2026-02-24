@@ -285,7 +285,7 @@ export class Bot extends GameClient {
 class BackendSocket {
     constructor(uuid, username, onMessage) {
         this.user = new User(uuid, username)
-        this.isBot = true
+        this.isHuman = false
         this.onMessage = onMessage
         this.handlers = new Map()
     }
