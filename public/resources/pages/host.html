@@ -1,15 +1,9 @@
 <form>
     <div>
-        <label for="numPlayers" title="The number of players in the game, including bots">Players:</label>
-        <input type="range" id="numPlayers" min="1" max="5" step="1" value="4"
+        <label for="capacity" title="The number of players in the game, including bots">Players:</label>
+        <input type="range" id="capacity" min="2" max="6" step="1" value="4"
             oninput="this.nextElementSibling.value = this.value">
         <output>4</output>
-    </div>
-    <div>
-        <label for="numBots" title="The number of players to be controlled by bots">Bots:</label>
-        <input type="range" id="numBots" min="0" max="5" step="1" value="0"
-            oninput="this.nextElementSibling.value = this.value">
-        <output>0</output>
     </div>
     <div>
         <label for="decks"

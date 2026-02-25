@@ -25,6 +25,7 @@ export class RoomHandler {
 
     closeRoom(room) {
         for (const socket of room.sockets.values()) {
+            if (!socket.isHuman) this.userHandler.remove(socket.user.uuid)
             socket.close();
         }
 

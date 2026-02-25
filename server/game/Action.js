@@ -38,7 +38,7 @@ export class Action {
 }
 
 export class AttackAction extends Action {
-    changes = { turn: true, draws: true }
+    changes = { turn: true }
     constructor() {
         super("attack")
     }
@@ -50,7 +50,7 @@ export class AttackAction extends Action {
 }
 
 export class DefuseAction extends Action {
-    changes = { turn: true }
+    changes = { turn: true, deck: true }
     constructor() {
         super("defuse")
         this.inputs = {
@@ -62,7 +62,6 @@ export class DefuseAction extends Action {
     async run(gameCtx) {
         gameCtx.deck.insert(await this.inputs.exploding, await this.inputs.position)
         gameCtx.advanceTurn()
-        if (gameCtx.draws !== 1) this.changes.draws = true
         gameCtx.draws = 1
     }
 }
@@ -77,19 +76,17 @@ export class ExplodingAction extends Action {
         const player = gameCtx.getPlayer()
         gameCtx.eliminatePlayer()
         this.changes.eliminate = player.uuid
-        if (gameCtx.draws !== 1) this.changes.draws = true
         gameCtx.draws = 1
     }
 }
 
 export class FutureAction extends Action {
+    changes = { show: true }
     constructor() {
         super("future")
     }
 
-    async run(gameCtx) {
-        const player = gameCtx.getPlayer()
-        this.changes[player.uuid] = { "show": gameCtx.seeFuture() }
+    async run() {
     }
 }
 
@@ -112,7 +109,6 @@ export class SkipAction extends Action {
     async run(gameCtx) {
         if (gameCtx.draws > 1) {
             gameCtx.draws--
-            this.changes.draws = true
         } else {
             gameCtx.advanceTurn()
             this.changes.turn = true
@@ -134,7 +130,6 @@ export class TransferAction extends Action {
         const player = gameCtx.getPlayer()
         const target = gameCtx.getPlayer(await this.inputs.target)
         const card = gameCtx.transferCard(target, player, await this.inputs.cardType)
-        this.changes[player.uuid] = { "receive": { card, from: target.uuid } }
-        this.changes[target.uuid] = { "give": { card, to: player.uuid } }
+        this.changes.transfer = { card, from: target.uuid, to: player.uuid }
     }
 }

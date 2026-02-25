@@ -16,6 +16,7 @@ export class RoomController {
             drawplayerlist: this.bound.drawPlayerList,
             promote: this.bound.promote,
             beforeunload: this.bound.leaveRoom,
+            kick: this.bound.leaveRoom,
             start: this.bound.startGame,
         }
     }
@@ -27,20 +28,23 @@ export class RoomController {
         this.roomClient = new RoomClient(uuid);
         await this.roomClient.joinRoom(roomId)
 
-    }
-
-    async afterLoad() {
-        document.querySelector("h1").textContent = `Room ${this.roomId}`
-        const leave = document.getElementById("leave");
-        leave.addEventListener("click", this.leaveRoom.bind(this));
-
         for (const event in this.eventHandlers) {
             window.addEventListener(event, this.eventHandlers[event])
         }
+
+        this.loaded = new Promise(resolve => this.onLoad = resolve)
+    }
+
+    async afterLoad() {
+        this.onLoad()
+        document.querySelector("h1").textContent = `Room ${this.roomId}`
+        const leave = document.getElementById("leave");
+        leave.addEventListener("click", () => this.leaveRoom(), { once: true });
     }
 
     async leaveRoom() {
         await this.roomClient.leaveRoom()
+        this.roomClient = null
         this.isHost = false;
 
         for (const event in this.eventHandlers) {
@@ -50,7 +54,9 @@ export class RoomController {
         loadPage("rooms", this.uuid);
     }
 
-    drawPlayerList() {
+    async drawPlayerList() {
+        await this.loaded
+
         const playerList = document.getElementById("playerList");
         playerList.innerHTML = "";
 
@@ -64,7 +70,7 @@ export class RoomController {
             kick.textContent = "Kick";
             kick.addEventListener("click", async () => {
                 await this.roomClient.kickPlayer(uuid);
-            });
+            }, { once: true });
 
             if (this.isHost && uuid !== this.uuid) li.appendChild(kick);
             playerList.appendChild(li);
@@ -72,21 +78,21 @@ export class RoomController {
     }
 
     async promote() {
+        await this.loaded
+
         this.isHost = true;
 
         const controls = await fetch("../../resources/pages/host.html").then(res => res.text())
         document.getElementById("hostControls").innerHTML = controls
 
-        document.querySelector("form").addEventListener("submit", async (e) => {
-            e.preventDefault();
+        async function editRoom(roomId) {
             const fields = {
-                numPlayers: document.getElementById("numPlayers"),
-                numBots: document.getElementById("numBots"),
+                capacity: document.getElementById("capacity"),
                 decks: document.getElementById("decks"),
                 cooldown: document.getElementById("cooldown"),
             }
 
-            const url = `/edit?roomId=${this.roomId}&players=${fields.numPlayers.value}&bots=${fields.numBots.value}&decks=${fields.decks.value}&cooldown=${fields.cooldown.value}`
+            const url = `/edit?roomId=${roomId}&capacity=${fields.capacity.value}&decks=${fields.decks.value}&cooldown=${fields.cooldown.value}`
             const actual = await fetch(url, { method: "PUT" }).then(res => res.json());
 
             for (const name in fields) {
@@ -94,12 +100,24 @@ export class RoomController {
                 fields[name].nextElementSibling.textContent = actual[name]
             }
 
+            return actual
+        }
+
+        document.querySelector("form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const actual = await editRoom(this.roomId)
             this.cooldown = actual.cooldown
         });
 
-        document.getElementById("start").addEventListener("click", async (e) => {
+        document.getElementById("start").addEventListener("click", async () => {
+            const actual = await editRoom(this.roomId)
+            this.cooldown = actual.cooldown
             this.roomClient.startGame()
-        })
+        }, { once: true })
+    }
+
+    onKick() {
+        alert("You were kicked from this room")
     }
 
     startGame(event) {

@@ -55,12 +55,11 @@ async function handle(req) {
     if (req.method === "PUT" && pathname === "/edit") {
         const roomId = searchParams.get("roomId");
         const room = roomHandler.getRoom(roomId)
-        const players = searchParams.get("players");
-        const bots = searchParams.get("bots");
+        const capacity = searchParams.get("capacity");
         const decks = searchParams.get("decks");
         const cooldown = searchParams.get("cooldown");
-        room.edit(Number(players), Number(bots), Number(decks), Number(cooldown));
-        return json({ numPlayers: room.totalCapacity, numBots: room.totalCapacity - room.playerCapacity, decks: room.decks, cooldown: room.cooldown });
+        room.edit(Number(capacity), Number(decks), Number(cooldown));
+        return json({ capacity: room.capacity, decks: room.decks, cooldown: room.cooldown });
     }
 
     // ---- Static files ----
@@ -80,4 +79,5 @@ function json(data, status = 200) {
 if (import.meta.main) {
     console.log("Starting server...")
     Deno.serve(handle, { port: Deno.env.get("PORT") || 3000 });
+    // Deno.serve(handle, { port: 3000 });
 }
