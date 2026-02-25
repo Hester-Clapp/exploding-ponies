@@ -122,18 +122,33 @@ export class GameController {
         this.drawPile.style["box-shadow"] = `0 ${length}px 0 0.25rem #ddd`
     }
 
-    cardToHTML(card = { cardType: "back", color: "black" }, functional = false) {
+    cardToHTML(card = { cardType: "back", color: "#eee" }, functional = false) {
+        const { cardType, cardId, color, name, instructions } = card
+
         const div = document.createElement("div")
         div.classList.add("card")
-        div.title = `Play ${card.cardType} card`
-        div.style["border-color"] = card.color
+        div.title = instructions || `Play ${name} card`
+        div.style["border-color"] = color
+
+        if (cardType === "back") {
+            div.classList.add("back")
+        } else {
+            const heading = document.createElement("h5")
+            heading.textContent = name
+            div.appendChild(heading)
+        }
 
         const img = document.createElement("img")
-        img.src = "resources/images/" + card.cardType + ".png"
-        img.alt = card.cardType
+        img.src = `resources/images/${cardType}.png`
+        img.alt = name
         div.appendChild(img)
 
         if (functional) {
+            const audio = card.hasAudio ? new Audio(`resources/audio/${cardId}.mp3`) : new Audio()
+            const audioIsReady = new Promise(resolve => {
+                audio.addEventListener("canplaythrough", resolve)
+            })
+
             function enableCard(event) {
                 const isEnabled = event.detail[card.cardType]
                 div.classList.toggle("enabled", isEnabled)
@@ -147,6 +162,7 @@ export class GameController {
                     div.classList.remove("enabled")
                     window.removeEventListener("enablecard", enableCard)
                     div.removeEventListener("clic", clickCard)
+                    if (card.hasAudio) audioIsReady.then(() => audio.play())
                     this.playCard(card, div)
                 }
             }.bind(this))

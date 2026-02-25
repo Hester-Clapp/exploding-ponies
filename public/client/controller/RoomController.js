@@ -61,7 +61,7 @@ export class RoomController {
         playerList.innerHTML = "";
 
         for (const uuid of this.roomClient.players.keys()) {
-            const username = this.roomClient.players.get(uuid)
+            const { username } = this.roomClient.players.get(uuid)
 
             const li = document.createElement("li");
             li.textContent = username;

@@ -177,11 +177,11 @@ output {
 
 .card {
     position: relative;
-    border-radius: 1rem;
+    border-radius: 0.5rem;
     width: 5.5rem;
     height: 8.5rem;
     outline: 0.25rem solid #eee;
-    border-width: 2px;
+    border-width: 3px;
     border-style: solid;
     padding: 0.25rem;
     margin: 0.5rem;
@@ -191,15 +191,26 @@ output {
 
     transition: filter 0.5s, left 0.5s, top 0.5s, transform 0.5s;
 
+    h5 {
+        font-size: 0.7rem;
+        /* padding: 0.125rem; */
+        margin: 0;
+        height: 2rem;
+    }
+
     img {
-        border-radius: 1rem;
+        border-radius: 0.4rem;
         width: 5.5rem;
-        height: 8.5rem;
+        height: 6.5rem;
     }
 }
 
 .card.disabled {
     filter: brightness(0.5);
+}
+
+.card.back img {
+    height: 8.5rem;
 }
 
 .card.enabled,

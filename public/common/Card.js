@@ -1,8 +1,11 @@
 export class Card {
+    hasAudio = true
+
     constructor(index, cardType) {
         this.index = index
         this.cardType = cardType
         this.cardId = cardType + index
+        this.name = (this.cardId in names) ? names[this.cardId] : names[this.cardType]
     }
 
     static fromData(data) {
@@ -41,8 +44,8 @@ export class Card {
 }
 
 export class AttackCard extends Card {
-    color = "orange"
-    name = "Attack"
+    color = "#EF5130"
+    instructions = "End your turn without drawing a card. \nForce the next player to take 2 turns."
 
     constructor(index) {
         super(index, "attack")
@@ -50,13 +53,14 @@ export class AttackCard extends Card {
 }
 
 export class CatCard extends Card {
-    color = "lightgrey"
+    color = "#DEDFD7"
+    hasAudio = false
 
     constructor(index, catType) {
         super(index, "cat" + catType)
         this.cardId = "cat" + catType
-        const names = ["Lyra Heartstrings", "Bon Bon", "Derpy", "Doctor Whooves", "DJ Pon-3"]
-        this.name = names[catType - 1]
+        this.name = names[this.cardId]
+        this.instructions = `This is a pony card and is powerless on its own. \nPlay two ${this.name} cards as a pair to steal a random card from another player.`
     }
 
     stacksOn(that) {
@@ -65,8 +69,8 @@ export class CatCard extends Card {
 }
 
 export class DefuseCard extends Card {
-    color = "lime"
-    name = "Element of Harmony"
+    color = "#8AA617"
+    instructions = "Put your last drawn card back into the deck."
 
     constructor(index) {
         super(index, "defuse")
@@ -74,8 +78,9 @@ export class DefuseCard extends Card {
 }
 
 export class ExplodingCard extends Card {
-    color = "darkgrey"
-    name = "Villain"
+    color = "black"
+    instructions = "Play this card immediately."
+    hasAudio = false
 
     constructor(index) {
         super(index, "exploding")
@@ -83,8 +88,8 @@ export class ExplodingCard extends Card {
 }
 
 export class FavorCard extends Card {
-    color = "darkgrey"
-    name = "Favor"
+    color = "#222B27"
+    instructions = "One player must give you a card of their choice."
 
     constructor(index) {
         super(index, "favor")
@@ -92,8 +97,8 @@ export class FavorCard extends Card {
 }
 
 export class FutureCard extends Card {
-    color = "magenta"
-    name = "See The Future"
+    color = "#DB2E5E"
+    instructions = "Privately view the top 3 cards of the deck."
 
     constructor(index) {
         super(index, "future")
@@ -101,8 +106,8 @@ export class FutureCard extends Card {
 }
 
 export class NopeCard extends Card {
-    color = "red"
-    name = "Nope"
+    color = "#933A2F"
+    instructions = "Stop the action of another player. \nYou can play this at any time."
 
     constructor(index) {
         super(index, "nope")
@@ -110,8 +115,8 @@ export class NopeCard extends Card {
 }
 
 export class ShuffleCard extends Card {
-    color = "tan"
-    name = "Shuffle"
+    color = "#4C3521"
+    instructions = "Shuffle the draw pile."
 
     constructor(index) {
         super(index, "shuffle")
@@ -119,10 +124,35 @@ export class ShuffleCard extends Card {
 }
 
 export class SkipCard extends Card {
-    color = "blue"
-    name = "Skip"
+    color = "#5372BF"
+    instructions = "End your turn without drawing a card."
 
     constructor(index) {
         super(index, "skip")
     }
+}
+
+const names = {
+    attack: "Attack",
+    cat1: "Derpy Hooves",
+    cat2: "Lyra Heartstrings",
+    cat3: "Bon Bon",
+    cat4: "DJ Pon-3",
+    cat5: "Doctor Whooves",
+    defuse1: "The Element Of Honesty",
+    defuse2: "The Element Of Kindness",
+    defuse3: "The Element Of Laughter",
+    defuse4: "The Element Of Generosity",
+    defuse5: "The Element Of Loyalty",
+    defuse6: "The Element Of Magic",
+    exploding1: "Queen Chrysalis",
+    exploding2: "King Sombra",
+    exploding3: "Lord Tirek",
+    exploding4: "The Pony Of Shadows",
+    exploding5: "Cozy Glow",
+    favor: "Favor",
+    future: "See The Future",
+    nope: "Nope",
+    shuffle: "Shuffle",
+    skip: "Skip"
 }

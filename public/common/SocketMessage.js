@@ -16,6 +16,6 @@ export class SocketMessage {
     }
 
     send(socket) {
-        socket.send(this.toString())
+        socket?.send(this.toString())
     }
 }
