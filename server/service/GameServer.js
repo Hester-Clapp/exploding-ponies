@@ -14,7 +14,6 @@ export class GameServer {
 
         this.cardHandler = new CardHandler()
         this.cooldown = cooldown
-        this.resolveTimeoutId = undefined
 
         this.cachedInputs = new Map() // name => value
         this.pendingInputs = new Map() // name => resolver
@@ -23,9 +22,11 @@ export class GameServer {
         this.sockets = sockets
 
         for (const socket of sockets.values()) {
-            socket.isReady = new Promise(resolve => {
-                socket.setReady = resolve
-            })
+            if (socket.isHuman) {
+                socket.isReady = new Promise(resolve => {
+                    socket.setReady = resolve
+                })
+            }
         }
     }
 
@@ -60,8 +61,8 @@ export class GameServer {
         } else {
             this.gameCtx.draws = 1
             this.gameCtx.advanceTurn()
-            this.publish("nextturn", { uuid: this.gameCtx.currentPlayerId })
         }
+        this.publish("nextturn", { uuid: this.gameCtx.currentPlayerId })
     }
 
     drawCard(uuid) {
@@ -87,13 +88,17 @@ export class GameServer {
 
     playCard(cardType, uuid) {
         const player = this.gameCtx.getPlayer(uuid)
-        if (!player.hand.has(cardType)) return;
+        if (!player.hand.has(cardType)) {
+            console.log(player.hand.types, player.hand.size)
+            console.error(`Player does not own a ${cardType} card: ${player.hand.toArray().map(card => card.cardType)}`)
+            this.publish("newturn", { uuid: this.currentPlayerId })
+            return
+        }
         const card = player.hand.take(cardType)
-
         this.gameCtx.deck.discard(card)
         this.cardHandler.enqueue(card)
         if (this.resolveTimeoutId) clearTimeout(this.resolveTimeoutId)
-        this.resolveTimeoutId = setTimeout(this.resolveActions.bind(this), this.cooldown * 1000)
+        this.resolveTimeoutId = setTimeout(() => this.resolveActions(), this.cooldown * 1000)
 
         this.publish("playcard", { card, uuid, coolingDown: true })
     }
@@ -108,6 +113,7 @@ export class GameServer {
                 const index = Math.floor(Math.random() * cards.length)
                 this.provideInput("cardType", cards[index].cardType)
             }
+            this.publish("provideinput", { target: value, cardType: this.gameCtx.deck.lastTypePlayed })
         }
 
         if (this.pendingInputs.has(input)) {
@@ -158,7 +164,10 @@ export class GameServer {
         }
         if ("shuffle" in changes) this.publish("shuffle")
         if ("draws" in changes) this.publish("draws", { draws: this.gameCtx.draws })
-        if ("turn" in changes) this.publish("nextturn", { uuid: this.gameCtx.currentPlayerId })
+        if ("deck" in changes) this.publish("deck", { length: this.gameCtx.deck.length })
+        if ("show" in changes) this.send(this.gameCtx.currentPlayerId, "show", this.gameCtx.seeFuture())
+        if ("transfer" in changes) this.publish("transfer", changes.transfer)
+        this.publish("nextturn", { uuid: this.gameCtx.currentPlayerId })
         if ("eliminate" in changes) {
             this.publish("eliminate", { uuid: changes.eliminate })
             this.checkWin()
@@ -174,6 +183,7 @@ export class GameServer {
     checkWin() {
         if (this.gameCtx.getPlayer().nextPlayerId === this.gameCtx.currentPlayerId) {
             this.publish("win", { uuid: this.gameCtx.currentPlayerId })
+            setTimeout(() => this.publish("end"), 5000)
         }
     }
 
@@ -188,5 +198,4 @@ export class GameServer {
             }
         }
     }
-
 }

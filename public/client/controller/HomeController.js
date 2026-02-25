@@ -1,5 +1,5 @@
 import { loadPage } from './pageLoader.js';
-import { getPonyName } from '../service/ponyNameGenerator.js';
+import { getPonyName } from '../../common/ponyNameGenerator.js';
 
 export class HomeController {
     res
@@ -11,7 +11,8 @@ export class HomeController {
         window.addEventListener("beforeunload", async (e) => {
             // e.preventDefault()
             if (this.res) fetch(`/play?uuid=${this.res.uuid}`, { method: "DELETE" })
-        });
+            this.res = null
+        }, { once: true });
     }
 
     async afterLoad() {
@@ -21,7 +22,7 @@ export class HomeController {
             e.preventDefault();
             this.username = document.getElementById("username").value
             await this.login()
-        });
+        }, { once: true });
     }
 
     async login() {

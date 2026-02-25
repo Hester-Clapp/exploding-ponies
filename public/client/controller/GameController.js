@@ -4,33 +4,22 @@ import { loadPage } from './pageLoader.js';
 export class GameController {
     constructor() {
         this.bound = {
-            onNewTurn: this.onNewTurn.bind(this),
-            renderHand: this.renderHand.bind(this),
-            onPlayCard: this.onPlayCard.bind(this),
-            onRequestInput: this.onRequestInput.bind(this),
-            showFuture: this.showFuture.bind(this),
-            giveCard: this.giveCard.bind(this),
-            receiveCard: this.receiveCard.bind(this),
+            newturn: this.onNewTurn.bind(this),
+            deal: this.renderHand.bind(this),
+            playcard: this.onPlayCard.bind(this),
+            provideinput: this.onProvideInput.bind(this),
+            requestinput: this.onRequestInput.bind(this),
+            show: this.showFuture.bind(this),
+            deck: this.onDeckLengthChange.bind(this),
+            give: this.giveCard.bind(this),
+            receive: this.receiveCard.bind(this),
+            transfer: this.animateTransfer.bind(this),
             shuffle: this.shuffle.bind(this),
-            onDrawCard: this.onDrawCard.bind(this),
-            eliminatePlayer: this.eliminatePlayer.bind(this),
-            eliminateSelf: this.eliminateSelf.bind(this),
-            onWin: this.onWin.bind(this)
-        }
-
-        this.eventHandlers = {
-            newturn: this.bound.onNewTurn,
-            deal: this.bound.renderHand,
-            playcard: this.bound.onPlayCard,
-            requestinput: this.bound.onRequestInput,
-            show: this.bound.showFuture,
-            give: this.bound.giveCard,
-            receive: this.bound.receiveCard,
-            shuffle: this.bound.shuffle,
-            drawcard: this.bound.onDrawCard,
-            eliminate: this.bound.eliminatePlayer,
-            eliminated: this.bound.eliminateSelf,
-            win: this.bound.onWin,
+            drawcard: this.onDrawCard.bind(this),
+            eliminate: this.eliminatePlayer.bind(this),
+            eliminated: this.eliminateSelf.bind(this),
+            win: this.onWin.bind(this),
+            leave: this.leaveGame.bind(this),
         }
     }
 
@@ -39,7 +28,10 @@ export class GameController {
         this.gameClient = gameClient
         this.cooldownTime = cooldownTime
 
-        window.addEventListener("beforeunload", () => this.gameClient.leaveGame())
+        window.addEventListener("beforeunload", () => {
+            this.gameClient.leaveGame()
+            this.gameClient = null
+        }, { once: true })
     }
 
     async afterLoad() {
@@ -48,11 +40,14 @@ export class GameController {
         this.cooldown = document.getElementById("cooldown")
         this.handDisplay = document.getElementById("hand")
 
+        document.getElementById("leave").addEventListener("click", () => this.leaveGame(), { once: true })
+
         this.bound.drawCard = this.gameClient.drawCard.bind(this.gameClient)
         this.drawPile.addEventListener("click", this.bound.drawCard)
 
-        for (const event in this.eventHandlers) {
-            window.addEventListener(event, this.eventHandlers[event])
+        this.eventController = new AbortController()
+        for (const event in this.bound) {
+            window.addEventListener(event, this.bound[event], { signal: this.eventController.signal })
         }
 
         this.gameClient.send("ready", null)
@@ -120,9 +115,9 @@ export class GameController {
 
     setDrawPileHeight(length) {
         if (length === 0) {
-            this.drawPile.style.display = "none"
+            this.drawPile.style.opacity = "0"
         } else {
-            this.drawPile.style.display = "block"
+            this.drawPile.style.opacity = "1"
         }
         this.drawPile.style["box-shadow"] = `0 ${length}px 0 0.25rem #ddd`
     }
@@ -147,13 +142,14 @@ export class GameController {
 
             window.addEventListener("enablecard", enableCard)
 
-            div.addEventListener("click", () => {
+            div.addEventListener("click", function clickCard() {
                 if (div.classList.contains("enabled")) {
                     div.classList.remove("enabled")
                     window.removeEventListener("enablecard", enableCard)
+                    div.removeEventListener("clic", clickCard)
                     this.playCard(card, div)
                 }
-            }, { once: true })
+            }.bind(this))
         }
 
         return div
@@ -232,7 +228,9 @@ export class GameController {
     }
 
     leaveGame() {
-        this.gameClient.leaveGame()
+        this.eventController.abort()
+        this.gameClient?.leaveGame()
+        this.gameClient = null
         loadPage("rooms", this.uuid)
     }
 
@@ -240,6 +238,8 @@ export class GameController {
         const isMyTurn = uuid === this.uuid
         const text = isMyTurn ? "It's your turn!" : `It's ${this.gameClient.getUsername(uuid)}'s turn`
         document.getElementById("turnStatus").textContent = text;
+        document.querySelector(".player.turn")?.classList?.remove("turn")
+        document.querySelector(`.player${uuid}`)?.classList?.add("turn")
     }
 
     setWinStatus(uuid) {
@@ -294,6 +294,12 @@ export class GameController {
         }
     }
 
+    onProvideInput(event) {
+        const { target, cardType } = event.detail
+        if (cardType === "favor" && target === this.uuid) return; // Message is already handled
+        this.setPlayStatus(`${this.gameClient.getUsername()} chose to target ${target === this.uuid ? "you!" : this.gameClient.getUsername(target)}`)
+    }
+
     onDrawCard(event) {
         const { card, uuid, handSize, length } = event.detail
         this.setDrawPileHeight(length)
@@ -307,6 +313,11 @@ export class GameController {
         } else {
             this.addToPlayerHand(uuid, handSize)
         }
+    }
+
+    onDeckLengthChange(event) {
+        const length = event.detail.length
+        this.setDrawPileHeight(length)
     }
 
     showFuture(event) {
@@ -332,6 +343,8 @@ export class GameController {
 
     giveCard(event) {
         const { card, to } = event.detail
+
+        console.log(card, to)
 
         const element = document.querySelector(`.cardGroup.${card.cardType}`).firstElementChild
         const end = document.querySelector(`#otherPlayers .player${to} .hand`)
@@ -411,19 +424,22 @@ export class GameController {
         ghost.style.position = "fixed"
         ghost.style.left = `${startPosition.x}px`
         ghost.style.top = `${startPosition.y}px`
-        ghost.style.transform = `rotate(0deg) scale(1)`
+        ghost.style.transition = "none"
         document.getElementById("app").appendChild(ghost)
 
         element.style.display = "none"
         newParent.appendChild(element)
 
         return new Promise(resolve => {
-            ghost.style.transition = `all 0.5s`
-            setTimeout(() => {
+            ghost.offsetHeight // Force reflow
+
+            ghost.style.transition = `left 0.5s ease-out, top 0.5s ease-out, transform 0.5s ease-out`
+
+            ghost.addEventListener("transitionend", () => {
                 element.style.display = ghost.style.display
                 ghost.remove()
                 resolve()
-            }, 500)
+            }, { once: true })
 
             requestAnimationFrame(() => {
                 ghost.style.left = `calc(${endPosition.x}px + ${offset.x})`
@@ -446,11 +462,13 @@ export class GameController {
         const bar = this.cooldown.firstElementChild
 
         this.cooldown.style.opacity = "1"
-        bar.style.transition = ""
+        bar.style.transition = "none"
         bar.style.width = "100%"
         bar.style.background = "blue"
 
         window.requestAnimationFrame(() => {
+            bar.offsetHeight // Force reflow
+
             bar.style.transition = `width ${this.cooldownTime}s linear, background-color ${this.cooldownTime}s linear`
             bar.style.width = "0"
             bar.style.background = "orange"
@@ -461,4 +479,11 @@ export class GameController {
         })
     }
 
+    animateTransfer(event) {
+        const { from, to } = event.detail
+        const fromDiv = document.querySelector(`.player${from} .hand`)
+        const toDiv = document.querySelector(`.player${to} .hand`)
+        const card = fromDiv.firstElementChild
+        this.glide(card, toDiv, 0, 0.5)
+    }
 }

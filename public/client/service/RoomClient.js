@@ -17,6 +17,7 @@ export class RoomClient {
             kick: this.onKick.bind(this),
             promote: this.dispatchEvent.bind(this, "promote"),
             start: this.onStart.bind(this),
+            end: this.leaveRoom.bind(this),
         }
     }
 
@@ -39,7 +40,9 @@ export class RoomClient {
     }
 
     async leaveRoom() {
+        this.dispatchEvent("leaveRoom")
         this.socket.removeEventListener("message", this.bound.message)
+        this.gameClient = null
 
         await new Promise((resolve) => {
             this.socket.addEventListener("close", resolve, { once: true });
@@ -56,17 +59,10 @@ export class RoomClient {
     onMessage(event) {
         const { type, payload } = SocketMessage.fromEvent(event);
         console.log(type)
-        switch (type) {
-            case "init":
-            case "join":
-            case "leave":
-            case "kick":
-            case "promote":
-            case "start":
-                this.bound[type](payload)
-                break
-            default:
-                this.gameClient?.onMessage(type, payload)
+        if (type in this.bound) {
+            this.bound[type](payload)
+        } else {
+            if (this.gameClient) this.gameClient.onMessage(type, payload)
         }
     }
 
@@ -80,18 +76,18 @@ export class RoomClient {
     }
 
     playerJoin(user) {
-        console.log(`${user.username} has joined the game`);
         this.players.set(user.uuid, user.username);
         this.dispatchEvent("drawplayerlist")
     }
 
     playerLeave(user) {
-        console.log(`${user.username} has left the game`);
         this.players.delete(user.uuid);
         this.dispatchEvent("drawplayerlist")
     }
 
     onKick() {
+        this.dispatchEvent("kick")
+        alert("You were kicked from this room")
         this.leaveRoom();
     }
 

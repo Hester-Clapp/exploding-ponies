@@ -8,11 +8,16 @@ export class RoomsController {
 
     async beforeLoad(uuid) {
         this.uuid = uuid
+
+        this.loaded = new Promise(resolve => this.onLoad = resolve)
     }
 
     async afterLoad() {
+        this.onLoad()
+
         this.ws = new WebSocket(location.origin.replace(/^http/, "ws") + "/rooms")
         this.ws.addEventListener("message", event => this.onMessage(event))
+        this.showRooms()
     }
 
     onMessage(event) {
@@ -24,22 +29,25 @@ export class RoomsController {
                 for (const room of payload.rooms) {
                     this.rooms.set(room.roomId, room)
                 }
-                break;
+                break
+
             case "create":
             case "edit":
                 // payload = room
                 this.rooms.set(payload.roomId, payload)
-                break;
+                break
+
             case "close":
                 // payload = room id
                 this.rooms.delete(payload)
-                break;
+                break
         }
-
         this.showRooms()
     }
 
-    showRooms() {
+    async showRooms() {
+        await this.loaded
+
         const container = document.getElementById("rooms");
         container.innerHTML = "";
 
@@ -49,7 +57,7 @@ export class RoomsController {
 
         const createButton = document.createElement("button");
         createButton.textContent = "Create Room";
-        createButton.addEventListener("click", this.createRoom.bind(this));
+        createButton.addEventListener("click", this.createRoom.bind(this), { once: true });
         createDiv.appendChild(createButton);
         container.appendChild(createDiv);
 
