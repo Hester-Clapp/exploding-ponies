@@ -1,5 +1,6 @@
 export class Card {
     hasAudio = true
+    isCat = false
 
     constructor(index, cardType) {
         this.index = index
@@ -55,6 +56,7 @@ export class AttackCard extends Card {
 export class CatCard extends Card {
     color = "#DEDFD7"
     hasAudio = false
+    isCat = true
 
     constructor(index, catType) {
         super(index, "cat" + catType)
@@ -78,7 +80,7 @@ export class DefuseCard extends Card {
 }
 
 export class ExplodingCard extends Card {
-    color = "black"
+    color = "#222C24"
     instructions = "Play this card immediately."
     hasAudio = false
 
@@ -97,7 +99,7 @@ export class FavorCard extends Card {
 }
 
 export class FutureCard extends Card {
-    color = "#DB2E5E"
+    color = "#DF346E"
     instructions = "Privately view the top 3 cards of the deck."
 
     constructor(index) {
@@ -106,7 +108,7 @@ export class FutureCard extends Card {
 }
 
 export class NopeCard extends Card {
-    color = "#933A2F"
+    color = "#A51614"
     instructions = "Stop the action of another player. \nYou can play this at any time."
 
     constructor(index) {
@@ -115,7 +117,7 @@ export class NopeCard extends Card {
 }
 
 export class ShuffleCard extends Card {
-    color = "#4C3521"
+    color = "#B17331"
     instructions = "Shuffle the draw pile."
 
     constructor(index) {
@@ -156,3 +158,43 @@ const names = {
     shuffle: "Shuffle",
     skip: "Skip"
 }
+
+export const audibleCards = [
+    "attack1",
+    "attack2",
+    "attack3",
+    "attack4",
+    "defuse1",
+    "defuse2",
+    "defuse3",
+    "defuse4",
+    "defuse5",
+    "defuse6",
+    "favor1",
+    "favor2",
+    "favor3",
+    "favor4",
+    "future1",
+    "future2",
+    "future3",
+    "future4",
+    "future5",
+    "nope1",
+    "nope2",
+    "nope3",
+    "nope4",
+    "nope5",
+    "yup1",
+    "yup2",
+    "yup3",
+    "yup4",
+    "yup5",
+    "shuffle1",
+    "shuffle2",
+    "shuffle3",
+    "shuffle4",
+    "skip1",
+    "skip2",
+    "skip3",
+    "skip4",
+]

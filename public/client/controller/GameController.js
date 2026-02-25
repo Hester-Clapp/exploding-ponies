@@ -1,5 +1,5 @@
 import { loadPage } from './pageLoader.js';
-
+import { audibleCards } from "../../common/Card.js"
 
 export class GameController {
     constructor() {
@@ -21,6 +21,9 @@ export class GameController {
             win: this.onWin.bind(this),
             leave: this.leaveGame.bind(this),
         }
+
+        this.audio = Object.fromEntries(audibleCards
+            .map(cardId => [cardId, new Audio(`resources/audio/${cardId}.mp3`)]))
     }
 
     async beforeLoad(uuid, gameClient, cooldownTime) {
@@ -122,7 +125,7 @@ export class GameController {
         this.drawPile.style["box-shadow"] = `0 ${length}px 0 0.25rem #ddd`
     }
 
-    cardToHTML(card = { cardType: "back", color: "#eee" }, functional = false) {
+    cardToHTML(card = { cardId: "back", color: "#eee" }, functional = false) {
         const { cardType, cardId, color, name, instructions } = card
 
         const div = document.createElement("div")
@@ -130,7 +133,11 @@ export class GameController {
         div.title = instructions || `Play ${name} card`
         div.style["border-color"] = color
 
-        if (cardType === "back") {
+        if (cardType === "exploding") {
+            div.classList.add("exploding")
+        }
+
+        if (cardId === "back") {
             div.classList.add("back")
         } else {
             const heading = document.createElement("h5")
@@ -139,16 +146,12 @@ export class GameController {
         }
 
         const img = document.createElement("img")
-        img.src = `resources/images/${cardType}.png`
+        img.src = `resources/images/${cardId}.png`
         img.alt = name
+        if (!card.isCat) img.style.background = color
         div.appendChild(img)
 
         if (functional) {
-            const audio = card.hasAudio ? new Audio(`resources/audio/${cardId}.mp3`) : new Audio()
-            const audioIsReady = new Promise(resolve => {
-                audio.addEventListener("canplaythrough", resolve)
-            })
-
             function enableCard(event) {
                 const isEnabled = event.detail[card.cardType]
                 div.classList.toggle("enabled", isEnabled)
@@ -161,8 +164,9 @@ export class GameController {
                 if (div.classList.contains("enabled")) {
                     div.classList.remove("enabled")
                     window.removeEventListener("enablecard", enableCard)
-                    div.removeEventListener("clic", clickCard)
-                    if (card.hasAudio) audioIsReady.then(() => audio.play())
+                    div.removeEventListener("click", clickCard)
+                    console.log(cardId, this.audio[cardId])
+                    if (card.hasAudio) this.audio[cardId].play()
                     this.playCard(card, div)
                 }
             }.bind(this))
@@ -282,6 +286,7 @@ export class GameController {
         this.setPlayStatus(`${this.gameClient.getUsername(uuid)} played ${card.name}`)
 
         const element = this.cardToHTML(card)
+        if (card.hasAudio) this.audio[card.cardId].play()
         // element.style.scale = "0.5"
 
         const hand = document.querySelector(`#otherPlayers .player${uuid} .hand`)
@@ -413,6 +418,10 @@ export class GameController {
 
     eliminateSelf() {
         this.setPlayStatus(`You have been eliminated :(`)
+        this.hideUI()
+    }
+
+    hideUI() {
         this.handDisplay.style.filter = "opacity(0)"
         this.drawPile.style.cursor = "auto"
         this.drawPile.removeEventListener("click", this.bound.drawCard)
@@ -422,6 +431,7 @@ export class GameController {
     onWin(event) {
         const { uuid } = event.detail
         this.setWinStatus(uuid)
+        this.hideUI()
         setTimeout(() => this.setPlayStatus("Exiting to lobby..."), 3000)
         setTimeout(() => this.leaveGame(), 5000)
     }

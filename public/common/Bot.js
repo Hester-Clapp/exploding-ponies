@@ -245,7 +245,7 @@ export class Bot extends GameClient {
         if (card.cardType === "exploding") {
             const delay = 1000 + 500 * Math.random()
             setTimeout(() => this.playType("exploding"), delay)
-            if (this.hand.has("defuse")) setTimeout(() => this.playType("defuse"), 500 + delay)
+            if (this.hand.has("defuse")) setTimeout(() => this.playType("defuse"), 900 + delay)
         }
     }
 

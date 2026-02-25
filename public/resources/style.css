@@ -200,6 +200,8 @@ output {
 
     img {
         border-radius: 0.4rem;
+        box-sizing: border-box;
+        /* border: 1px grey groove; */
         width: 5.5rem;
         height: 6.5rem;
     }
@@ -211,6 +213,17 @@ output {
 
 .card.back img {
     height: 8.5rem;
+}
+
+.card.exploding {
+    background: #333;
+    outline-color: #333;
+
+    h5 {
+        background: repeating-linear-gradient(#F9C929 0, #EF4625 1rem);
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
 }
 
 .card.enabled,
