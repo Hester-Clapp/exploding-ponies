@@ -11,7 +11,10 @@ async function handle(req) {
     const { pathname, searchParams } = url;
 
     if (req.method === "POST" && pathname === "/play") {
-        const uuid = userHandler.add(searchParams);
+        const uuid = userHandler.add(
+            decodeURIComponent(searchParams.get("username")),
+            decodeURIComponent(searchParams.get("avatar"))
+        );
         return json({ uuid }, 201);
     }
 

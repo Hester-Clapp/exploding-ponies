@@ -74,14 +74,13 @@ export class RoomClient {
         this.players.clear()
 
         for (const player of players) {
-            this.players.set(player.uuid, player.username);
+            this.players.set(player.uuid, player);
         }
         this.dispatchEvent("drawplayerlist")
     }
 
     playerJoin(user) {
-        console.log(`${user.username} has joined the game`);
-        this.players.set(user.uuid, user.username);
+        this.players.set(user.uuid, user);
         this.dispatchEvent("drawplayerlist")
     }
 

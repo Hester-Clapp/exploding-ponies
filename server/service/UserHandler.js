@@ -4,11 +4,9 @@ export class UserHandler {
         this.users = new Map();
     }
 
-    add(params) {
-        const username = params.get("username") || "Anon";
-
+    add(username, avatar) {
         const uuid = crypto.randomUUID();
-        this.users.set(uuid, new User(uuid, username));
+        this.users.set(uuid, new User(uuid, username, avatar));
 
         return uuid;
     }
@@ -36,16 +34,31 @@ export class UserHandler {
     }
 }
 
-class User {
-    constructor(uuid, username) {
+export class User {
+    constructor(uuid, username, avatar) {
         this.uuid = uuid;
         this.username = username;
+        if (avatar) {
+            const [coat, mane, eyes] = avatar.split(",")
+            this.avatar = {
+                coat: Number(coat),
+                mane: Number(mane),
+                eyes: Number(eyes)
+            }
+        } else {
+            this.avatar = {
+                coat: Math.floor(360 * Math.random()),
+                mane: Math.floor(360 * Math.random()),
+                eyes: Math.floor(360 * Math.random()),
+            }
+        }
     }
 
     expose() {
         return {
             uuid: this.uuid,
-            username: this.username
+            username: this.username,
+            avatar: this.avatar
         }
     }
 }

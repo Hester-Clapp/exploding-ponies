@@ -7,8 +7,9 @@ export class GameClient {
         this.socket = socket
 
         this.players = new Map()
-        for (const [uuid, username] of players.entries()) {
-            this.players.set(uuid, { username, isAlive: false })
+        for (const [uuid, player] of players.entries()) {
+            const { username, avatar } = player
+            this.players.set(uuid, { username, avatar, handSize: 8, isAlive: true })
         }
 
         this.isMyTurn = false
