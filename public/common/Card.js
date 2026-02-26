@@ -79,7 +79,6 @@ export class DefuseCard extends Card {
 export class ExplodingCard extends Card {
     color = "#222C24"
     instructions = "Play this card immediately."
-    hasAudio = false
 
     constructor(index) {
         super(index, "exploding")
@@ -172,6 +171,11 @@ export const audibleCards = [
     "defuse4",
     "defuse5",
     "defuse6",
+    "exploding1",
+    "exploding2",
+    "exploding3",
+    "exploding4",
+    "exploding5",
     "favor1",
     "favor2",
     "favor3",

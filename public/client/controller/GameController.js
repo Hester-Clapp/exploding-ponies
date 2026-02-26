@@ -165,12 +165,7 @@ export class GameController {
                     div.classList.remove("enabled")
                     window.removeEventListener("enablecard", enableCard)
                     div.removeEventListener("click", clickCard)
-                    console.log(cardId, this.audio[cardId])
-                    if (card.hasAudio) {
-                        if (this.currentAudio) this.currentAudio.pause()
-                        this.currentAudio = this.audio[cardId]
-                        this.currentAudio.play()
-                    }
+                    this.playAudio(cardId)
                     this.playCard(card, div)
                 }
             }.bind(this))
@@ -276,6 +271,17 @@ export class GameController {
         document.getElementById("playStatus").textContent = text;
     }
 
+    playAudio(cardId) {
+        if (this.currentAudio) {
+            this.currentAudio.pause()
+            if (this.currentAudio != this.audio[cardId]) {
+                this.currentAudio.currentTime = 0
+            }
+        }
+        this.currentAudio = this.audio[cardId]
+        this.currentAudio.play()
+    }
+
     // Reactions
     onNewTurn(event) {
         const { uuid } = event.detail
@@ -290,11 +296,7 @@ export class GameController {
         this.setPlayStatus(`${this.gameClient.getUsername(uuid)} played ${card.name}`)
 
         const element = this.cardToHTML(card)
-        if (card.hasAudio) {
-            if (this.currentAudio) this.currentAudio.pause()
-            this.currentAudio = this.audio[card.cardId]
-            this.currentAudio.play()
-        }
+        this.playAudio(card.cardId)
         // element.style.scale = "0.5"
 
         const hand = document.querySelector(`#otherPlayers .player${uuid} .hand`)
