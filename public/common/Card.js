@@ -2,10 +2,10 @@ export class Card {
     hasAudio = true
     isCat = false
 
-    constructor(index, cardType) {
+    constructor(index, cardType, cardId = cardType + index) {
         this.index = index
         this.cardType = cardType
-        this.cardId = cardType + index
+        this.cardId = cardId
         this.name = (this.cardId in names) ? names[this.cardId] : names[this.cardType]
     }
 
@@ -55,13 +55,10 @@ export class AttackCard extends Card {
 
 export class CatCard extends Card {
     color = "#DEDFD7"
-    hasAudio = false
     isCat = true
 
     constructor(index, catType) {
-        super(index, "cat" + catType)
-        this.cardId = "cat" + catType
-        this.name = names[this.cardId]
+        super(index, "cat" + catType, "cat" + catType)
         this.instructions = `This is a pony card and is powerless on its own. \nPlay two ${this.name} cards as a pair to steal a random card from another player.`
     }
 
@@ -147,10 +144,10 @@ const names = {
     defuse4: "The Element Of Generosity",
     defuse5: "The Element Of Loyalty",
     defuse6: "The Element Of Magic",
-    exploding1: "Queen Chrysalis",
-    exploding2: "King Sombra",
-    exploding3: "Lord Tirek",
-    exploding4: "The Pony Of Shadows",
+    exploding1: "Nightmare Moon",
+    exploding2: "Queen Chrysalis",
+    exploding3: "King Sombra",
+    exploding4: "Lord Tirek",
     exploding5: "Cozy Glow",
     favor: "Favor",
     future: "See The Future",
@@ -164,6 +161,11 @@ export const audibleCards = [
     "attack2",
     "attack3",
     "attack4",
+    "cat1",
+    "cat2",
+    "cat3",
+    "cat4",
+    "cat5",
     "defuse1",
     "defuse2",
     "defuse3",

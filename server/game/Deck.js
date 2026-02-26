@@ -28,8 +28,12 @@ export class Deck {
             hands.forEach(hand => hand.add(this.draw())) // Draw remaining cards
         }
 
+        const villains = new Deck()
+        villains.add(ExplodingCard, 5)
+        villains.shuffle() // Shuffle for variety in which villains are included
+
         for (let i = 1; i < hands.length; i++) { // 1 less than the number of players
-            this.cards.push(new ExplodingCard(i))
+            this.cards.push(villains.draw())
         }
 
         this.shuffle()
@@ -56,7 +60,6 @@ export class Deck {
     }
 
     insert(card, position) {
-        console.log(card, position)
         this.cards.splice(position, 0, card)
     }
 
