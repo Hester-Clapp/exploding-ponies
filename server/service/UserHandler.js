@@ -50,6 +50,7 @@ export class User {
                 coat: Math.floor(360 * Math.random()),
                 mane: Math.floor(360 * Math.random()),
                 eyes: Math.floor(360 * Math.random()),
+                style: Math.floor(3 * Math.random()),
             }
         }
     }

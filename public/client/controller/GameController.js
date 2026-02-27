@@ -1,5 +1,6 @@
 import { loadPage } from './pageLoader.js';
 import { audibleCards } from "../../common/Card.js"
+import { Avatar } from '../service/Avatar.js';
 
 export class GameController {
     constructor() {
@@ -72,9 +73,17 @@ export class GameController {
             div.classList.add("player")
             div.classList.add(`player${uuid}`)
 
+            const flex = document.createElement("div")
+            flex.style.display = "flex"
+            div.appendChild(flex)
+
             const nameTag = document.createElement("h3")
             nameTag.textContent = player.username;
-            div.appendChild(nameTag)
+            flex.appendChild(nameTag)
+
+            const avatar = new Avatar(document.createElement("div"))
+            avatar.setFeatures(player.avatar)
+            flex.appendChild(avatar.container)
 
             const hand = document.createElement("div");
             hand.classList.add(`hand`)
