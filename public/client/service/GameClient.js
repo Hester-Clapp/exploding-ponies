@@ -33,7 +33,10 @@ export class GameClient {
                 this.players.get(payload.uuid).handSize--
                 this.lastCardPlayer = payload.uuid
                 this.lastTypePlayed = payload.card.cardType
-                this.dispatchEvent(type, { ...payload, username: this.getUsername(payload.uuid) })
+                this.dispatchEvent("playcard", {
+                    ...payload,
+                    yup: (payload.card.cardType === "nope" && payload.uuid === this.currentPlayerId)
+                })
             case "resolve":
                 this.configureCardPlayability(payload.coolingDown)
                 break

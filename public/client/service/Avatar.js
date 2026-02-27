@@ -18,7 +18,6 @@ export class Avatar {
         this.features.forEach(feature => {
             this[feature].style.filter = `hue-rotate(${values[feature]}deg)`
         })
-        console.log(this)
         this.mane.src = `resources/images/avatar-mane-${values.style}.png`
     }
 
