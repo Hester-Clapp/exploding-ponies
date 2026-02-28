@@ -1,59 +1,56 @@
+import { Controller } from './Controller.js';
 import { loadPage } from './pageLoader.js';
 import { audibleCards } from "../../common/Card.js"
 import { Avatar } from '../service/Avatar.js';
 
-export class GameController {
+export class GameController extends Controller {
     constructor() {
-        this.bound = {
-            newturn: this.onNewTurn.bind(this),
-            deal: this.renderHand.bind(this),
-            playcard: this.onPlayCard.bind(this),
-            provideinput: this.onProvideInput.bind(this),
-            requestinput: this.onRequestInput.bind(this),
-            show: this.showFuture.bind(this),
-            deck: this.onDeckLengthChange.bind(this),
-            give: this.giveCard.bind(this),
-            receive: this.receiveCard.bind(this),
-            transfer: this.animateTransfer.bind(this),
-            shuffle: this.shuffle.bind(this),
-            drawcard: this.onDrawCard.bind(this),
-            eliminate: this.eliminatePlayer.bind(this),
-            eliminated: this.eliminateSelf.bind(this),
-            win: this.onWin.bind(this),
-            leave: this.leaveGame.bind(this),
-        }
+        super()
 
         this.audio = Object.fromEntries(audibleCards
             .map(cardId => [cardId, new Audio(`resources/audio/${cardId}.mp3`)]))
     }
 
     async beforeLoad(uuid, gameClient, cooldownTime) {
+        super.beforeLoad()
+
         this.uuid = uuid
         this.gameClient = gameClient
         this.cooldownTime = cooldownTime
 
-        this.cleanup = new AbortController()
-
-        window.addEventListener("beforeunload", () => {
+        this.addEventListener("beforeunload", () => {
             this.gameClient.leaveGame()
             this.gameClient = null
-        }, { once: true, signal: this.cleanup.signal })
+        }, true)
     }
 
     async afterLoad() {
+        super.afterLoad()
+
         this.drawPile = document.getElementById("drawPile")
         this.discardPile = document.getElementById("discardPile")
         this.cooldown = document.getElementById("cooldown")
         this.handDisplay = document.getElementById("hand")
 
         document.getElementById("leave").addEventListener("click", () => this.leaveGame(), { once: true })
+        this.drawPile.addEventListener("click", this.gameClient.drawCard.bind(this.gameClient), { signal: this.cleanup.signal })
 
-        this.bound.drawCard = this.gameClient.drawCard.bind(this.gameClient)
-        this.drawPile.addEventListener("click", this.bound.drawCard)
-
-        for (const event in this.bound) {
-            window.addEventListener(event, this.bound[event], { signal: this.cleanup.signal })
-        }
+        this.addEventListener("newturn", this.onNewTurn)
+        this.addEventListener("deal", this.renderHand)
+        this.addEventListener("playcard", this.onPlayCard)
+        this.addEventListener("provideinput", this.onProvideInput)
+        this.addEventListener("requestinput", this.onRequestInput)
+        this.addEventListener("show", this.showFuture)
+        this.addEventListener("deck", this.onDeckLengthChange)
+        this.addEventListener("give", this.giveCard)
+        this.addEventListener("receive", this.receiveCard)
+        this.addEventListener("transfer", this.animateTransfer)
+        this.addEventListener("shuffle", this.shuffle)
+        this.addEventListener("drawcard", this.onDrawCard)
+        this.addEventListener("eliminate", this.eliminatePlayer)
+        this.addEventListener("eliminated", this.eliminateSelf)
+        this.addEventListener("win", this.onWin)
+        this.addEventListener("leave", this.leaveGame)
 
         this.gameClient.send("ready", null)
 
@@ -61,6 +58,11 @@ export class GameController {
     }
 
     // Rendering
+
+    /**
+     * Renders the other players in the game and their hands
+     * @param {Event} event 
+     */
     renderPlayerList(event) {
         const players = event.detail
         const playersDisplay = document.getElementById("otherPlayers");
@@ -96,6 +98,11 @@ export class GameController {
         }
     }
 
+    /**
+     * Adds visual cards to the other players' hands after dealing
+     * @param {string} uuid The player whose hand we are adding to
+     * @param {number} length The number of cards they have
+     */
     initialisePlayerHand(uuid, length = 8) {
         if (uuid === this.uuid) return
         for (let i = 0; i < length; i++) {
@@ -103,6 +110,10 @@ export class GameController {
         }
     }
 
+    /**
+     * Animates a card from the draw pile to another player's hand
+     * @param {string} uuid The player who is drawing the card
+     */
     addToPlayerHand(uuid) {
         const hand = document.querySelector(`.player${uuid} .hand`)
         const card = this.cardToHTML()
@@ -110,6 +121,10 @@ export class GameController {
         this.glide(card, hand, 0, 0.5)
     }
 
+    /**
+     * Renders the contents of this player's hand
+     * @param {Event} event Encapsulates the cards in the hand and the length of the draw pile
+     */
     renderHand(event) {
         const { hand, length } = event.detail
         this.setDrawPileHeight(length)
@@ -126,6 +141,10 @@ export class GameController {
         }
     }
 
+    /**
+     * Adjusts the visual height of the draw pile
+     * @param {number} length The number of cards in the draw pile
+     */
     setDrawPileHeight(length) {
         if (length === 0) {
             this.drawPile.style.opacity = "0"
@@ -135,6 +154,12 @@ export class GameController {
         this.drawPile.style["box-shadow"] = `0 ${length}px 0 0.25rem #ddd`
     }
 
+    /**
+     * Creates a HTML representation of a card
+     * @param {Card} card The card to represent - leave blank for a back card
+     * @param {boolean} functional Whether the card is functional - can it be clicked or interacted with
+     * @returns The HTML element representing the card
+     */
     cardToHTML(card = { cardId: "back", color: "#eee" }, functional = false) {
         const { cardType, cardId, color, name, instructions } = card
 
@@ -184,7 +209,48 @@ export class GameController {
         return div
     }
 
+    /**
+     * Changes the status header to show whose turn it is
+     * @param {string} uuid The player whose turn it is
+     */
+    setTurnStatus(uuid) {
+        const isMyTurn = uuid === this.uuid
+        const text = isMyTurn ? "It's your turn!" : `It's ${this.gameClient.getUsername(uuid)}'s turn`
+        document.getElementById("turnStatus").textContent = text;
+        document.querySelectorAll(".turn").forEach(el => el.classList.remove("turn"))
+        if (isMyTurn) {
+            this.handDisplay.classList.add("turn")
+            this.drawPile.classList.add("turn")
+        } else {
+            document.querySelector(`.player${uuid}`)?.classList?.add("turn")
+        }
+    }
+
+    /**
+     * Changes the status header to show who won
+     * @param {string} uuid The player who won
+     */
+    setWinStatus(uuid) {
+        const isMyTurn = uuid === this.uuid
+        const text = isMyTurn ? "You won!" : `${this.gameClient.getUsername(uuid)} won!`
+        document.getElementById("turnStatus").textContent = text;
+    }
+
+    /**
+     * Changes the status sub-header
+     * @param {string} text The text to show
+     */
+    setPlayStatus(text) {
+        document.getElementById("playStatus").textContent = text;
+    }
+
     // Actions
+
+    /**
+     * Triggered when this player plays a card
+     * @param {Card} card The card they played
+     * @param {HTMLElement} element The element representing the card to be animated
+     */
     playCard(card, element) {
         this.setPlayStatus(`You played ${card.name}`)
         this.gameClient.playCard(card)
@@ -192,6 +258,11 @@ export class GameController {
         this.animateCooldown()
     }
 
+    /**
+     * Prompts this user to choose a target player for favor and cat cards
+     * @param {User[]} players All the players in the game
+     * @returns The uuid of the chosen player
+     */
     async choosePlayer(players) {
         return new Promise(resolve => {
             const controller = new AbortController()
@@ -206,6 +277,7 @@ export class GameController {
                     document.querySelectorAll(`#otherPlayers>div`).forEach(el => el.style.cursor = "auto")
                     element.style.cursor = "auto"
 
+                    document.querySelector(`.player${uuid}`).classList.add("target")
                     this.setPlayStatus(`Waiting for ${this.gameClient.getUsername(uuid)} to choose a card...`)
 
                     controller.abort()
@@ -215,10 +287,16 @@ export class GameController {
         })
     }
 
+    /**
+     * Prompts this user to choose a card type if they are targetted by a favor card
+     * @param {string[]} types The different types of card they could choose
+     * @returns The type of card they want to give
+     */
     async chooseCard(types) {
         return new Promise(resolve => {
             const controller = new AbortController()
             this.setPlayStatus("Choose a card to give")
+            this.handDisplay.classList.add("target")
 
             types.forEach(type => {
                 const element = document.querySelector(`.${type}.cardGroup`)
@@ -235,6 +313,11 @@ export class GameController {
         })
     }
 
+    /**
+     * Prompts this user to choose a position to re-insert an exploding card after defusing it
+     * @param {number} length The number of cards in the draw pile
+     * @returns The position where the card should be inserted
+     */
     async choosePosition(length) {
         return new Promise(resolve => {
             const overlay = document.getElementById("overlay")
@@ -256,6 +339,9 @@ export class GameController {
         })
     }
 
+    /**
+     * Leaves the game and returns to the rooms overview
+     */
     leaveGame() {
         this.cleanup.abort()
         this.gameClient?.leaveGame()
@@ -263,26 +349,12 @@ export class GameController {
         loadPage("rooms", this.uuid)
     }
 
-    setTurnStatus(uuid) {
-        const isMyTurn = uuid === this.uuid
-        const text = isMyTurn ? "It's your turn!" : `It's ${this.gameClient.getUsername(uuid)}'s turn`
-        document.getElementById("turnStatus").textContent = text;
-        document.querySelector(".player.turn")?.classList?.remove("turn")
-        document.querySelector(`.player${uuid}`)?.classList?.add("turn")
-    }
-
-    setWinStatus(uuid) {
-        const isMyTurn = uuid === this.uuid
-        const text = isMyTurn ? "You won!" : `${this.gameClient.getUsername(uuid)} won!`
-        document.getElementById("turnStatus").textContent = text;
-    }
-
-    setPlayStatus(text) {
-        document.getElementById("playStatus").textContent = text;
-    }
-
+    /**
+     * Plays the audio associated with a given card when it is played
+     * @param {Card} card The card being played
+     * @param {boolean} yup Whether the nope card should play the "yup" variant
+     */
     playAudio(card, yup) {
-        console.log(yup)
         if (this.currentAudio) {
             this.currentAudio.pause()
             if (this.currentAudio != this.audio[card.cardId]) {
@@ -294,12 +366,24 @@ export class GameController {
     }
 
     // Reactions
+
+    /**
+     * Configures the status headers when it is a new turn
+     * @param {Event} event Encapsulates the uuid of the player whose turn it now is
+     */
     onNewTurn(event) {
         const { uuid } = event.detail
-        this.setTurnStatus(uuid)
-        this.setPlayStatus("")
+        document.querySelector(`.target`)?.classList?.remove("target")
+        if (uuid !== this.gameClient.currentPlayerId) {
+            this.setTurnStatus(uuid)
+            this.setPlayStatus("")
+        }
     }
 
+    /**
+     * Animates another player playing a card
+     * @param {Event} event Encapsulates the card played, the player who played it and whether it is a "yup" variant
+     */
     onPlayCard(event) {
         const { card, uuid, yup } = event.detail
         if (uuid === this.uuid) return
@@ -318,6 +402,10 @@ export class GameController {
         this.animateCooldown()
     }
 
+    /**
+     * Dispatches which chooser to use when input is requested from this user
+     * @param {Event} event Encapsulates the input being requested and relevant arguments
+     */
     onRequestInput(event) {
         const { input, players, types, length } = event.detail
         switch (input) {
@@ -336,12 +424,21 @@ export class GameController {
         }
     }
 
+    /**
+     * Configures the status sub-header when input is provided
+     * @param {Event} event Encapsulates the target and relevant information
+     */
     onProvideInput(event) {
         const { target, cardType } = event.detail
         if (cardType === "favor" && target === this.uuid) return; // Message is already handled
         this.setPlayStatus(`${this.gameClient.getUsername()} chose to target ${target === this.uuid ? "you!" : this.gameClient.getUsername(target)}`)
+        document.querySelector(target === this.uuid ? "#hand" : `.player${target}`).classList.add("target")
     }
 
+    /**
+     * Animates any player drawing a card
+     * @param {Event} event Encapsulates the card being drawn, the player drawing it, the new size of their hand and the length of the draw pile
+     */
     onDrawCard(event) {
         const { card, uuid, handSize, length } = event.detail
         this.setDrawPileHeight(length)
@@ -357,11 +454,19 @@ export class GameController {
         }
     }
 
+    /**
+     * Configures the visual height of the draw pile when it changes
+     * @param {Event} event Encapsulates the length of the deck
+     */
     onDeckLengthChange(event) {
         const length = event.detail.length
         this.setDrawPileHeight(length)
     }
 
+    /**
+     * Displays the 3 cards on top of the deck to this player
+     * @param {Event} event Encapsulates the cards coming up
+     */
     showFuture(event) {
         const cards = event.detail
         const overlay = document.getElementById("overlay")
@@ -376,13 +481,20 @@ export class GameController {
         overlay.classList.remove("hidden")
         div.classList.remove("hidden")
 
-        div.querySelector("button").addEventListener("click", () => {
+        function remove() {
             overlay.classList.add("hidden")
             div.classList.add("hidden")
             ol.innerHTML = ""
-        }, { once: true })
+        }
+
+        div.querySelector("button").addEventListener("click", remove, { once: true })
+        setTimeout(remove, this.cooldownTime * 2000)
     }
 
+    /**
+     * Animates giving a card to another player
+     * @param {Event} event Encapsulates the card being given and the player receiving it
+     */
     giveCard(event) {
         const { card, to } = event.detail
 
@@ -400,6 +512,10 @@ export class GameController {
         this.setPlayStatus(`You sent a ${card.name} card to ${this.gameClient.getUsername(to)}`)
     }
 
+    /**
+     * Animates receiving a card from another player
+     * @param {Event} event Encapsulates the card being received and the player giving it
+     */
     receiveCard(event) {
         const { card, from } = event.detail
 
@@ -416,6 +532,9 @@ export class GameController {
         this.setPlayStatus(`You got a ${card.name} card from ${this.gameClient.getUsername(from)}!`)
     }
 
+    /**
+     * Animates the draw pile being shuffled
+     */
     shuffle() {
         this.drawPile.style.transform = "scaleX(1)"
         this.drawPile.style.transition = "transform 0.25s ease-in-out"
@@ -423,6 +542,10 @@ export class GameController {
         setTimeout(() => requestAnimationFrame(() => this.drawPile.style.transform = "scaleX(1)"), 500)
     }
 
+    /**
+     * Configures the status bar when a player is eliminated or leaves the game
+     * @param {Event} event Encapsulates the player who is eliminated and the new current player if they left
+     */
     eliminatePlayer(event) {
         const { uuid, currentPlayerId } = event.detail
         if (currentPlayerId) { // Player left game
@@ -434,18 +557,28 @@ export class GameController {
         document.querySelector(`.player${uuid}`).style.filter = "brightness(0.5)"
     }
 
+    /**
+     * Configures the status bar when this player is eliminated and hides their hand
+     */
     eliminateSelf() {
-        this.setPlayStatus(`You have been eliminated :(`)
+        this.setPlayStatus(`You have been eliminated!`)
         this.hideUI()
     }
 
+    /**
+     * Hides the visual hand when this player wins or is eliminated
+     */
     hideUI() {
-        this.handDisplay.style.filter = "opacity(0)"
+        this.handDisplay.style.opacity = 0
         this.drawPile.style.cursor = "auto"
-        this.drawPile.removeEventListener("click", this.bound.drawCard)
         setTimeout(() => this.handDisplay.remove(), 500)
     }
 
+    /**
+     * Configures the status bar when a player wins and hides this player's hand
+     * Redirects to the rooms overview after 5 seconds
+     * @param {Event} event Encapsulates the player who won
+     */
     onWin(event) {
         const { uuid } = event.detail
         this.setWinStatus(uuid)
@@ -455,6 +588,15 @@ export class GameController {
     }
 
     // Animations
+
+    /**
+     * Animates gliding a card from its current location to another
+     * @param {HTMLElement} element The card element to animate
+     * @param {HTMLElement} newParent The element to glide the card to
+     * @param {number} rotate The nubmer of degrees to rotate the card
+     * @param {number} scale The final scale of the card
+     * @returns 
+     */
     async glide(element, newParent, rotate = 0, scale = 1) {
         const startPosition = element.parentElement.getBoundingClientRect()
         const endPosition = newParent.getBoundingClientRect()
@@ -494,6 +636,10 @@ export class GameController {
         })
     }
 
+    /**
+     * Glides a card to the discard pile, applying a random rotation
+     * @param {HTMLElement} element The card to animate
+     */
     animateDiscard(element) {
         const angle = (Math.random() ** 2) * 20 - 10
         this.glide(element, this.discardPile, angle, 1)
@@ -502,6 +648,9 @@ export class GameController {
         if (this.discardPile.children.length >= 5) this.discardPile.firstChild.remove()
     }
 
+    /**
+     * Animates the bar showing the cooldown before playing another card
+     */
     animateCooldown() {
         const bar = this.cooldown.firstElementChild
 
@@ -523,6 +672,10 @@ export class GameController {
         })
     }
 
+    /**
+     * Animates transferring a card from one player to another, neither of whom are this player
+     * @param {Event} event Encapsulates the sender and receiver of the card
+     */
     animateTransfer(event) {
         const { from, to } = event.detail
         const fromDiv = document.querySelector(`.player${from} .hand`)

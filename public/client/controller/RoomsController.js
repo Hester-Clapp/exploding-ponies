@@ -1,25 +1,32 @@
-import { SocketMessage } from '../../common/SocketMessage.js';
+import { Controller } from './Controller.js';
 import { loadPage } from './pageLoader.js';
+import { SocketMessage } from '../../common/SocketMessage.js';
 
-export class RoomsController {
+export class RoomsController extends Controller {
     constructor() {
+        super()
+
         this.rooms = new Map()
     }
 
     async beforeLoad(uuid) {
-        this.uuid = uuid
+        super.beforeLoad()
 
-        this.loaded = new Promise(resolve => this.onLoad = resolve)
+        this.uuid = uuid
     }
 
     async afterLoad() {
-        this.onLoad()
+        super.afterLoad()
 
         this.ws = new WebSocket(location.origin.replace(/^http/, "ws") + "/rooms")
         this.ws.addEventListener("message", event => this.onMessage(event))
         this.showRooms()
     }
 
+    /**
+     * Dispatches logic for events relating to room updates
+     * @param {Event} event 
+     */
     onMessage(event) {
         const { type, payload } = SocketMessage.fromEvent(event)
         switch (type) {
@@ -45,6 +52,9 @@ export class RoomsController {
         this.showRooms()
     }
 
+    /**
+     * Renders the list of available rooms to join
+     */
     async showRooms() {
         await this.loaded
 
@@ -87,6 +97,9 @@ export class RoomsController {
         }
     }
 
+    /**
+     * Asks the server to create a new room, and then joins it
+     */
     async createRoom() {
         try {
             const { roomId } = await fetch("/rooms", { method: "POST" }).then(res => res.json())
@@ -96,8 +109,13 @@ export class RoomsController {
         }
     }
 
+    /**
+     * Joins the room with the given id
+     * @param {string} roomId 
+     */
     async joinRoom(roomId) {
         try {
+            this.cleanup.abort()
             await loadPage("room", roomId, this.uuid);
         } catch (error) {
             alert(`Failed to join room: ${error.message}`);

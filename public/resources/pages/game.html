@@ -1,6 +1,20 @@
 <h1 id="turnStatus">Waiting for game to start...</h1>
 <h3 id="playStatus"></h3>
-<button id="leave">Leave</button>
+<div class="flexbox">
+    <button id="leave">Leave</button>
+    <label>
+        <input id="enableSoundEffects" type="checkbox" checked>
+        Sound effects
+    </label>
+    <label>
+        <input id="enableTurnIndicator" type="checkbox" checked>
+        Turn indicator
+    </label>
+    <label>
+        <input id="enableStatusBars" type="checkbox" checked>
+        Status bars
+    </label>
+</div>
 <div id="otherPlayers"></div>
 <div id="deck">
     <div class="card back" id="drawPile" style="border-color: #eee">

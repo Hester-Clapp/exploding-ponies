@@ -94,9 +94,9 @@ export class GameClient {
     }
 
     newTurn(uuid) {
+        this.dispatchEvent("newturn", { uuid })
         this.currentPlayerId = uuid
         this.isMyTurn = this.currentPlayerId === this.uuid
-        this.dispatchEvent("newturn", { uuid })
 
         if (this.lastTypePlayed === "exploding") this.lastTypePlayed = ""
         if (this.lastTypeDrawn === "exploding") this.lastTypeDrawn = ""
@@ -108,21 +108,11 @@ export class GameClient {
             && this.lastTypeDrawn !== "exploding"
             && this.lastTypePlayed !== "exploding"
 
-        const catPlayability = (catType) => {
-            console.log(
-                this.hand.has(catType, 2) // You can play if you have 2
-                , coolingDown
-                , this.lastCardPlayer === this.uuid // Or if you just played one
-                , this.hand.has(catType) // and you have another one
-                , this.lastTypePlayed === catType // which is the same
-            )
-            return (this.hand.has(catType, 2) // You can play if you have 2
-                || (coolingDown
-                    && this.lastCardPlayer === this.uuid // Or if you just played one
-                    && this.hand.has(catType) // and you have another one
-                    && this.lastTypePlayed === catType)) // which is the same
-        }
-
+        const catPlayability = (catType) => (this.hand.has(catType, 2) // You can play if you have 2
+            || (coolingDown
+                && this.lastCardPlayer === this.uuid // Or if you just played one
+                && this.hand.has(catType) // and you have another one
+                && this.lastTypePlayed === catType)) // which is the same
 
         const nopePlayability = coolingDown // Only play nope during cooldown
             && this.lastTypePlayed !== "defuse" // Cannot "nope" defuse
@@ -146,7 +136,6 @@ export class GameClient {
             shuffle: defaultPlayability,
             skip: defaultPlayability,
         }
-        console.log(playableCards)
         this.dispatchEvent("enablecard", playableCards)
         return playableCards
     }

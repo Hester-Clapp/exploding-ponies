@@ -1,22 +1,26 @@
+import { Controller } from './Controller.js';
 import { loadPage } from './pageLoader.js';
 import { getPonyName } from '../../common/ponyNameGenerator.js';
 import { Avatar } from '../service/Avatar.js';
 
-export class HomeController {
+export class HomeController extends Controller {
     res
 
     async beforeLoad() {
+        super.beforeLoad()
+
         this.userData = UserData.fromStorage(sessionStorage)
         if (this.userData.saved) this.login()
 
         window.addEventListener("beforeunload", async (e) => {
-            // e.preventDefault()
             if (this.res) fetch(`/play?uuid=${this.res.uuid}`, { method: "DELETE" })
             this.res = null
         }, { once: true });
     }
 
     async afterLoad() {
+        super.afterLoad()
+
         const fields = {
             username: document.getElementById("username"),
             coat: document.getElementById("coat"),

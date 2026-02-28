@@ -162,6 +162,10 @@ output {
     margin-left: 5px;
 }
 
+#turnStatus {
+    margin-bottom: 0;
+}
+
 #playStatus {
     min-height: 1.5em;
 }
@@ -182,6 +186,10 @@ output {
 
     div.player.turn h3 {
         text-shadow: 0 1px 2px orange;
+    }
+
+    div.player.target h3 {
+        text-shadow: 0 1px 2px blue;
     }
 
     .hand {
@@ -287,6 +295,17 @@ output {
 #hand {
     display: flex;
     flex-wrap: wrap;
+    border-radius: 0.5rem;
+    opacity: 1;
+    transition: opacity 0.5s;
+}
+
+#hand.turn {
+    box-shadow: 0 0 0.5rem orange, 0 0 0.5rem orange inset;
+}
+
+#hand.target {
+    box-shadow: 0 0 0.5rem blue, 0 0 0.5rem blue inset;
 }
 
 .cardGroup {
@@ -340,6 +359,11 @@ output {
         li::marker {
             font-size: 1.5rem;
         }
+    }
+
+    button {
+        margin: 0 40%;
+        width: 20%;
     }
 }
 

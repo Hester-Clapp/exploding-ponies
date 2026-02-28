@@ -1,59 +1,67 @@
+import { Controller } from './Controller.js';
 import { loadPage } from './pageLoader.js';
 import { RoomClient } from '../service/RoomClient.js';
 
-export class RoomController {
+export class RoomController extends Controller {
     constructor() {
+        super()
+
         this.isHost = false
 
-        this.bound = {
-            drawPlayerList: this.drawPlayerList.bind(this),
-            promote: this.promote.bind(this),
-            leaveRoom: this.leaveRoom.bind(this),
-            startGame: this.startGame.bind(this),
-        }
+        // this.bound = {
+        //     drawPlayerList: this.drawPlayerList.bind(this),
+        //     promote: this.promote.bind(this),
+        //     leaveRoom: this.leaveRoom.bind(this),
+        //     startGame: this.startGame.bind(this),
+        // }
 
-        this.eventHandlers = {
-            drawplayerlist: this.bound.drawPlayerList,
-            promote: this.bound.promote,
-            beforeunload: this.bound.leaveRoom,
-            kick: this.bound.leaveRoom,
-            start: this.bound.startGame,
-        }
+        // this.eventHandlers = {
+        //     drawplayerlist: this.bound.drawPlayerList,
+        //     promote: this.bound.promote,
+        //     beforeunload: this.bound.leaveRoom,
+        //     kick: this.bound.leaveRoom,
+        //     start: this.bound.startGame,
+        // }
     }
 
     async beforeLoad(roomId, uuid) {
+        super.beforeLoad()
+
         this.roomId = roomId
         this.uuid = uuid
 
         this.roomClient = new RoomClient(uuid);
         await this.roomClient.joinRoom(roomId)
 
-        for (const event in this.eventHandlers) {
-            window.addEventListener(event, this.eventHandlers[event])
-        }
-
-        this.loaded = new Promise(resolve => this.onLoad = resolve)
+        this.addEventListener("drawplayerlist", this.drawPlayerList)
+        this.addEventListener("promote", this.promote)
+        this.addEventListener("beforeunload", this.leaveRoom)
+        this.addEventListener("kick", this.leaveRoom)
+        this.addEventListener("start", this.startGame)
     }
 
     async afterLoad() {
-        this.onLoad()
+        super.afterLoad()
+
         document.querySelector("h1").textContent = `Room ${this.roomId}`
         const leave = document.getElementById("leave");
         leave.addEventListener("click", () => this.leaveRoom(), { once: true });
     }
 
+    /**
+     * Leaves the room and returns to the rooms page
+     */
     async leaveRoom() {
         await this.roomClient.leaveRoom()
         this.roomClient = null
         this.isHost = false;
-
-        for (const event in this.eventHandlers) {
-            window.removeEventListener(event, this.eventHandlers[event])
-        }
-
+        this.cleanup.abort()
         loadPage("rooms", this.uuid);
     }
 
+    /**
+     * Renders the list of other players in the room
+     */
     async drawPlayerList() {
         await this.loaded
 
@@ -77,6 +85,9 @@ export class RoomController {
         }
     }
 
+    /**
+     * Renders the host controls when the client is promoted to room host
+     */
     async promote() {
         await this.loaded
 
@@ -116,11 +127,19 @@ export class RoomController {
         }, { once: true })
     }
 
+    /**
+     * Reacts to being kicked from the room
+     */
     onKick() {
         alert("You were kicked from this room")
     }
 
+    /**
+     * Reacts to the game being started and loads the game page
+     * @param {Event} event 
+     */
     startGame(event) {
+        this.cleanup.abort()
         loadPage("game", this.uuid, this.roomClient.gameClient, event.detail.cooldown)
     }
 }
