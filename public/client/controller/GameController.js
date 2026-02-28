@@ -32,10 +32,12 @@ export class GameController {
         this.gameClient = gameClient
         this.cooldownTime = cooldownTime
 
+        this.cleanup = new AbortController()
+
         window.addEventListener("beforeunload", () => {
             this.gameClient.leaveGame()
             this.gameClient = null
-        }, { once: true })
+        }, { once: true, signal: this.cleanup.signal })
     }
 
     async afterLoad() {
@@ -49,9 +51,8 @@ export class GameController {
         this.bound.drawCard = this.gameClient.drawCard.bind(this.gameClient)
         this.drawPile.addEventListener("click", this.bound.drawCard)
 
-        this.eventController = new AbortController()
         for (const event in this.bound) {
-            window.addEventListener(event, this.bound[event], { signal: this.eventController.signal })
+            window.addEventListener(event, this.bound[event], { signal: this.cleanup.signal })
         }
 
         this.gameClient.send("ready", null)
@@ -167,7 +168,7 @@ export class GameController {
                 div.classList.toggle("disabled", !isEnabled)
             }
 
-            window.addEventListener("enablecard", enableCard)
+            window.addEventListener("enablecard", enableCard, { signal: this.cleanup.signal })
 
             div.addEventListener("click", function clickCard() {
                 if (div.classList.contains("enabled")) {
@@ -197,7 +198,7 @@ export class GameController {
             this.setPlayStatus("Choose a player to target")
 
             players.forEach(uuid => {
-                if (uuid === this.uuid) return
+                if (uuid === this.uuid || !this.gameClient.players.get(uuid).isAlive) return
                 const element = document.querySelector(`.player${uuid}`)
                 element.style.cursor = "pointer"
 
@@ -209,7 +210,7 @@ export class GameController {
 
                     controller.abort()
                     resolve(uuid)
-                }, { signal: controller.signal })
+                }, { once: true, signal: controller.signal })
             })
         })
     }
@@ -256,7 +257,7 @@ export class GameController {
     }
 
     leaveGame() {
-        this.eventController.abort()
+        this.cleanup.abort()
         this.gameClient?.leaveGame()
         this.gameClient = null
         loadPage("rooms", this.uuid)
@@ -385,8 +386,6 @@ export class GameController {
     giveCard(event) {
         const { card, to } = event.detail
 
-        console.log(card, to)
-
         const element = document.querySelector(`.cardGroup.${card.cardType}`).firstElementChild
         const end = document.querySelector(`#otherPlayers .player${to} .hand`)
 
@@ -403,7 +402,6 @@ export class GameController {
 
     receiveCard(event) {
         const { card, from } = event.detail
-        this.gameClient.hand.add(card)
 
         const element = this.cardToHTML(card, true)
         element.style.transform = "scale(0.5)"

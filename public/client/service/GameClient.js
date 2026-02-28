@@ -46,7 +46,7 @@ export class GameClient {
                 break
 
             case "provideinput":
-                if (!this.isMyTurn) this.dispatchEvent(type, payload)
+                if (!this.isMyTurn) this.dispatchEvent("provideinput", payload)
                 break
 
             case "transfer":
@@ -68,14 +68,15 @@ export class GameClient {
                 this.players.get(payload.uuid).handSize++
                 this.drawPileLength = payload.length
                 if (payload.uuid === this.uuid) this.onDrawCard(payload.card)
-                this.dispatchEvent(type, payload)
+                this.dispatchEvent("drawcard", payload)
                 this.configureCardPlayability(false)
                 break
 
             case "eliminate":
                 this.lastTypePlayed = ""
+                this.players.get(payload.uuid).isAlive = false
                 if (payload.uuid === this.uuid) this.dispatchEvent("eliminated")
-                else this.dispatchEvent(type, payload)
+                else this.dispatchEvent("eliminate", payload)
                 break
 
             case "deck":
@@ -107,11 +108,21 @@ export class GameClient {
             && this.lastTypeDrawn !== "exploding"
             && this.lastTypePlayed !== "exploding"
 
-        const catPlayability = (catType) => (this.hand.has(catType, 2) // You can play if you have 2
-            || (coolingDown
-                && this.lastCardPlayer === this.uuid // Or if you just played one
-                && this.hand.has(catType) // and you have another one
-                && this.lastTypePlayed === catType)) // which is the same
+        const catPlayability = (catType) => {
+            console.log(
+                this.hand.has(catType, 2) // You can play if you have 2
+                , coolingDown
+                , this.lastCardPlayer === this.uuid // Or if you just played one
+                , this.hand.has(catType) // and you have another one
+                , this.lastTypePlayed === catType // which is the same
+            )
+            return (this.hand.has(catType, 2) // You can play if you have 2
+                || (coolingDown
+                    && this.lastCardPlayer === this.uuid // Or if you just played one
+                    && this.hand.has(catType) // and you have another one
+                    && this.lastTypePlayed === catType)) // which is the same
+        }
+
 
         const nopePlayability = coolingDown // Only play nope during cooldown
             && this.lastTypePlayed !== "defuse" // Cannot "nope" defuse
@@ -135,6 +146,7 @@ export class GameClient {
             shuffle: defaultPlayability,
             skip: defaultPlayability,
         }
+        console.log(playableCards)
         this.dispatchEvent("enablecard", playableCards)
         return playableCards
     }
