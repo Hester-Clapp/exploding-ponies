@@ -175,8 +175,20 @@ export class GameServer {
     }
 
     onLeave(uuid) {
+        // Check if they were targetted by a favor, and if so give a random card
+        const player = this.gameCtx.getPlayer(uuid)
+        if (player) {
+            const cards = player.hand.toArray()
+            const index = Math.floor(Math.random() * cards.length)
+            if (this.cachedInputs.has("target") || this.pendingInputs.has("target")) {
+                const target = this.cachedInputs.get("target")
+                if (target === uuid) this.provideInput("cardType", cards[index].cardType)
+            }
+        }
+
         this.gameCtx.eliminatePlayer(uuid)
         this.publish("eliminate", { uuid, currentPlayerId: this.gameCtx.currentPlayerId })
+        this.publish("nextturn", { uuid: this.gameCtx.currentPlayerId })
         this.checkWin()
     }
 

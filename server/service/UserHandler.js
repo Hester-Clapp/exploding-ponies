@@ -39,17 +39,19 @@ export class User {
         this.uuid = uuid;
         this.username = username;
         if (avatar) {
-            const [coat, mane, eyes] = avatar.split(",")
+            const [coat, mane, eyes, style] = avatar.split(",")
             this.avatar = {
                 coat: Number(coat),
                 mane: Number(mane),
-                eyes: Number(eyes)
+                eyes: Number(eyes),
+                style: Number(style),
             }
         } else {
             this.avatar = {
                 coat: Math.floor(360 * Math.random()),
                 mane: Math.floor(360 * Math.random()),
                 eyes: Math.floor(360 * Math.random()),
+                style: Math.floor(3 * Math.random()),
             }
         }
     }

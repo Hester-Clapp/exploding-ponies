@@ -1,14 +1,30 @@
-<form>
+<form id="userData">
     <label for="username">Username:</label>
     <input type="text" id="username" maxlength="20">
     <fieldset>
         <legend>Avatar</legend>
-        <label for="coat">Coat:</label>
-        <input type="range" id="coat" min="0" max="360" step="1">
-        <label for="mane">Mane:</label>
-        <input type="range" id="mane" min="0" max="360" step="1">
-        <label for="eyes">Eyes:</label>
-        <input type="range" id="eyes" min="0" max="360" step="1">
+        <div>
+            <div class="avatar">
+            </div>
+            <div>
+                <div class="field">
+                    <label for="coat">Coat:</label>
+                    <input type="range" id="coat" min="0" max="360" step="1">
+                </div>
+                <div class="field">
+                    <label for="mane">Mane:</label>
+                    <input type="range" id="mane" min="0" max="360" step="1">
+                </div>
+                <div class="field">
+                    <label for="eyes">Eyes:</label>
+                    <input type="range" id="eyes" min="0" max="360" step="1">
+                </div>
+                <div class="field">
+                    <label for="eyes">Style:</label>
+                    <input type="range" id="style" min="0" max="2" step="1">
+                </div>
+            </div>
+        </div>
     </fieldset>
     <input type="submit" value="Play">
 </form>

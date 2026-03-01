@@ -31,7 +31,8 @@ export class Hand {
 
     get(cardType) {
         if (!this.has(cardType)) return null;
-        return this.cards.get(cardType)[0]
+        const group = this.cards.get(cardType)
+        return group[group.length - 1]
     }
 
     take(cardType) {
@@ -39,8 +40,8 @@ export class Hand {
         const cards = this.cards.get(cardType)
         if (cards.length === 1) {
             this.cards.delete(cardType)
-            return cards[0]
-        } else return cards.shift()
+            return cards[cards.length - 1]
+        } else return cards.pop()
     }
 
     toObject() {

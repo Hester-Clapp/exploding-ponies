@@ -22,6 +22,10 @@ export class RoomServer {
         this.close = callback;
     }
 
+    setUpdateCallback(callback) {
+        this.onUpdate = callback;
+    }
+
     setCapacity(capacity) {
         this.capacity = Math.min(Math.max(capacity, 2), 6);
     }
@@ -84,6 +88,8 @@ export class RoomServer {
                 decks: this.decks
             })
         }
+
+        this.onUpdate()
     }
 
     onMessage(event) {
@@ -97,7 +103,7 @@ export class RoomServer {
                 this.gameServer?.setPlayerReady(sender)
                 break
             case "playcard":
-                this.gameServer?.playCard(payload.cardType, sender)
+                this.gameServer?.playCard(payload, sender)
                 break
             case "provideinput":
                 for (const input in payload) this.gameServer?.provideInput(input, payload[input])
@@ -141,6 +147,8 @@ export class RoomServer {
             this.publish("end")
             this.gameServer = null
             this.close();
+        } else {
+            this.onUpdate()
         }
 
         controller.abort()
@@ -164,6 +172,8 @@ export class RoomServer {
 
             bots.push(bot)
         }
+
+        this.onUpdate()
         return bots;
     }
 
@@ -176,6 +186,11 @@ export class RoomServer {
             this.gameServer.deal();
         })
         this.publish("start", this.expose())
+    }
+
+    getUsername(uuid) {
+        if (!this.sockets.has(uuid)) return "Unknown"
+        return this.sockets.get(uuid).user.username
     }
 
     send(socket, type, payload, sender = socket.id) {
@@ -197,6 +212,7 @@ export class RoomServer {
             numPlayers: this.sockets.size,
             decks: this.decks,
             cooldown: this.cooldown,
+            host: this.getUsername(this.hostQueue[0])
         }
     }
 }

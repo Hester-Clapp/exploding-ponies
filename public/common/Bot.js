@@ -10,6 +10,7 @@ export class Bot extends GameClient {
         this.username = username
         this.upcomingCards = []
         this.isAlive = true
+        this.hasWon = false
 
         // If a bot has the ability to play a card which will reduce the probability of drawing an exploding card by this value, then they will play it
         this.desiredProbabilityReduction = Math.random() * 0.4
@@ -172,6 +173,7 @@ export class Bot extends GameClient {
                 break
 
             case "win":
+                this.hasWon = true
                 this.socket.removeEventListener("send")
                 break
         }
@@ -186,7 +188,7 @@ export class Bot extends GameClient {
 
     playType(type) {
         if (this.canPlay(type)) {
-            super.playCard(this.hand.get(type))
+            super.playCard(type)
         }
     }
 
@@ -245,7 +247,7 @@ export class Bot extends GameClient {
         if (card.cardType === "exploding") {
             const delay = 1000 + 500 * Math.random()
             setTimeout(() => this.playType("exploding"), delay)
-            if (this.hand.has("defuse")) setTimeout(() => this.playType("defuse"), 500 + delay)
+            if (this.hand.has("defuse")) setTimeout(() => this.playType("defuse"), 900 + delay)
         }
     }
 
@@ -259,6 +261,8 @@ export class Bot extends GameClient {
     }
 
     decidePlay() {
+        if (!this.isAlive || this.hasWon) return
+
         this.cardValues.exploding.number = Array.from(this.players.values()).filter(player => player.isAlive).length - 1
         const probability = (this.upcomingCards.length > 0)
             ? (this.upcomingCards[0].cardType === "exploding" ? 1 : 0)

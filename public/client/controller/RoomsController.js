@@ -1,25 +1,34 @@
-import { SocketMessage } from '../../common/SocketMessage.js';
+import { Controller } from './Controller.js';
 import { loadPage } from './pageLoader.js';
+import { SocketMessage } from '../../common/SocketMessage.js';
 
-export class RoomsController {
+export class RoomsController extends Controller {
     constructor() {
+        super()
+
         this.rooms = new Map()
     }
 
     async beforeLoad(uuid) {
-        this.uuid = uuid
+        super.beforeLoad()
 
-        this.loaded = new Promise(resolve => this.onLoad = resolve)
+        this.uuid = uuid
     }
 
     async afterLoad() {
-        this.onLoad()
+        super.afterLoad()
+
+        this.container = document.getElementById("rooms");
 
         this.ws = new WebSocket(location.origin.replace(/^http/, "ws") + "/rooms")
-        this.ws.addEventListener("message", event => this.onMessage(event))
+        this.ws.addEventListener("message", event => this.onMessage(event), { signal: this.cleanup.signal })
         this.showRooms()
     }
 
+    /**
+     * Dispatches logic for events relating to room updates
+     * @param {Event} event 
+     */
     onMessage(event) {
         const { type, payload } = SocketMessage.fromEvent(event)
         switch (type) {
@@ -29,27 +38,33 @@ export class RoomsController {
                 for (const room of payload.rooms) {
                     this.rooms.set(room.roomId, room)
                 }
+                this.showRooms()
                 break
 
             case "create":
+            case "update":
             case "edit":
                 // payload = room
                 this.rooms.set(payload.roomId, payload)
+                this.patchRoom(payload)
                 break
 
             case "close":
                 // payload = room id
                 this.rooms.delete(payload)
+                this.deleteRoom(payload)
+                if (this.rooms.size === 0) this.noRooms.textContent = "No active rooms. Create one!";
                 break
         }
-        this.showRooms()
     }
 
+    /**
+     * Renders the list of available rooms to join
+     */
     async showRooms() {
         await this.loaded
 
-        const container = document.getElementById("rooms");
-        container.innerHTML = "";
+        this.container.innerHTML = "";
 
         // Create Room
         const createDiv = document.createElement("div");
@@ -59,34 +74,69 @@ export class RoomsController {
         createButton.textContent = "Create Room";
         createButton.addEventListener("click", this.createRoom.bind(this), { once: true });
         createDiv.appendChild(createButton);
-        container.appendChild(createDiv);
+
+        this.noRooms = document.createElement("p");
+        createDiv.appendChild(this.noRooms);
+
+        this.container.appendChild(createDiv);
 
         // Available rooms
         if (this.rooms.size === 0) {
-            const noRooms = document.createElement("p");
-            noRooms.textContent = "No active rooms. Create one!";
-            createDiv.appendChild(noRooms);
+            this.noRooms.textContent = "No active rooms. Create one!";
             return;
         }
 
         for (const room of this.rooms.values()) {
-            const div = document.createElement("div");
-            div.classList.add("room");
-
-            const title = document.createElement("h2");
-            title.textContent = `Room ${room.roomId} (${room.numPlayers}/${room.capacity})`;
-            div.appendChild(title);
-
-            const joinButton = document.createElement("button");
-            joinButton.textContent = "Join";
-            joinButton.disabled = room.numPlayers >= room.capacity;
-            joinButton.addEventListener("click", this.joinRoom.bind(this, room.roomId));
-            div.appendChild(joinButton);
-
-            container.appendChild(div);
+            this.container.appendChild(this.roomToHTML(room));
         }
     }
 
+    async patchRoom(room) {
+        await this.loaded
+
+        const before = document.querySelector(`.room${room.roomId}`)
+        const after = this.roomToHTML(room)
+
+        if (before) {
+            before.innerHTML = after.innerHTML
+        } else {
+            this.container.appendChild(after);
+        }
+    }
+
+    async deleteRoom(roomId) {
+        await this.loaded
+
+        const div = document.querySelector(`.room${roomId}`)
+        if (div) div.remove()
+    }
+
+    roomToHTML(room) {
+        const { roomId, numPlayers, capacity, host } = room
+        const div = document.createElement("div");
+        div.classList.add("room");
+        div.classList.add(`room${roomId}`)
+
+        const title = document.createElement("h2");
+        title.textContent = `Room ${roomId} (${numPlayers}/${capacity})`;
+        div.appendChild(title);
+
+        const hostLabel = document.createElement("p");
+        hostLabel.textContent = `Host: ${host}`;
+        div.appendChild(hostLabel);
+
+        const joinButton = document.createElement("button");
+        joinButton.textContent = "Join";
+        joinButton.disabled = numPlayers >= capacity;
+        joinButton.addEventListener("click", this.joinRoom.bind(this, roomId));
+        div.appendChild(joinButton);
+
+        return div
+    }
+
+    /**
+     * Asks the server to create a new room, and then joins it
+     */
     async createRoom() {
         try {
             const { roomId } = await fetch("/rooms", { method: "POST" }).then(res => res.json())
@@ -96,8 +146,13 @@ export class RoomsController {
         }
     }
 
+    /**
+     * Joins the room with the given id
+     * @param {string} roomId 
+     */
     async joinRoom(roomId) {
         try {
+            this.cleanup.abort()
             await loadPage("room", roomId, this.uuid);
         } catch (error) {
             alert(`Failed to join room: ${error.message}`);
