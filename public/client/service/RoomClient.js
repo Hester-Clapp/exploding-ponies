@@ -11,6 +11,7 @@ export class RoomClient {
 
         this.bound = {
             message: this.onMessage.bind(this),
+            close: this.onClose.bind(this),
             init: this.initializePlayers.bind(this),
             join: this.playerJoin.bind(this),
             leave: this.playerLeave.bind(this),
@@ -37,6 +38,7 @@ export class RoomClient {
     async joinRoom(roomId) {
         this.socket = new WebSocket(`${this.baseWs}/join?roomId=${roomId}&uuid=${this.uuid}`);
         this.socket.addEventListener("message", this.bound.message)
+        this.socket.addEventListener("close", this.bound.close)
     }
 
     async leaveRoom() {
@@ -58,12 +60,18 @@ export class RoomClient {
 
     onMessage(event) {
         const { type, payload } = SocketMessage.fromEvent(event);
-        console.log(type)
         if (type in this.bound) {
             this.bound[type](payload)
         } else {
             if (this.gameClient) this.gameClient.onMessage(type, payload)
         }
+    }
+
+    onClose() {
+        // alert("Something went wrong. Apologies for the inconvenience")
+        // this.gameClient?.leaveGame()
+        // this.leaveRoom()
+        // window.location.reload()
     }
 
     initializePlayers(players) {

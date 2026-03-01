@@ -205,6 +205,15 @@ export class GameClient {
         return this.getPlayer(uuid).username
     }
 
+    get numLivingPlayers() {
+        return Array.from(this.players.values())
+            .filter(player => player.isAlive).length
+    }
+
+    get villainChance() {
+        return (this.numLivingPlayers - 1) / this.drawPileLength
+    }
+
     send(type, payload) {
         const message = new SocketMessage(this.uuid, type, payload);
         this.socket.send(message.toString());

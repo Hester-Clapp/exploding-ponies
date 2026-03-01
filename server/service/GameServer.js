@@ -144,6 +144,13 @@ export class GameServer {
         )
 
         Promise.all(inputPromises).then(() => this.playActions(actions))
+
+        if (this.cachedInputs.has("target") // If someone asked a bot to choose a card type
+            && this.pendingInputs.has("cardType") // And the bot hasn't chosen because they noped instead
+            && this.lastTypePlayed === "nope") { // But then the nope was yupped
+            // Remind them that they still owe a card
+            this.send(this.cachedInputs.get(target), "requestInput", { input: "cardType" })
+        }
     }
 
     async playActions(actions) {

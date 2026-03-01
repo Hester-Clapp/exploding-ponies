@@ -37,7 +37,7 @@ export class GameController extends Controller {
         this.handDisplay = document.getElementById("hand")
 
         document.getElementById("leave").addEventListener("click", () => this.leaveGame(), { once: true })
-        this.drawPile.addEventListener("click", this.gameClient.drawCard.bind(this.gameClient), { signal: this.cleanup.signal })
+        this.drawPile.addEventListener("click", this.drawCard.bind(this), { signal: this.cleanup.signal })
 
         const enableSoundEffects = document.getElementById("enableSoundEffects")
         enableSoundEffects.addEventListener("click", () => {
@@ -168,6 +168,7 @@ export class GameController extends Controller {
             this.drawPile.style.opacity = "1"
         }
         this.drawPile.style["box-shadow"] = `0 ${length}px 0 0.25rem #ddd`
+        this.drawPile.style["margin-bottom"] = `${length}px`
     }
 
     /**
@@ -363,6 +364,13 @@ export class GameController extends Controller {
         })
     }
 
+    drawCard() {
+        if (this.gameClient.isMyTurn) {
+            this.drawPile.style.cursor = "progress"
+            this.gameClient.drawCard()
+        }
+    }
+
     /**
      * Leaves the game and returns to the rooms overview
      */
@@ -402,6 +410,7 @@ export class GameController extends Controller {
             this.setTurnStatus(uuid)
             this.setPlayStatus("")
         }
+        this.drawPile.style.cursor = (uuid !== this.uuid) ? "default" : "pointer"
     }
 
     /**
@@ -465,6 +474,7 @@ export class GameController extends Controller {
      */
     onDrawCard(event) {
         const { card, uuid, handSize, length } = event.detail
+        this.drawPile.style.cursor = "pointer"
         this.setDrawPileHeight(length)
 
         if (uuid === this.uuid) {
@@ -594,7 +604,7 @@ export class GameController extends Controller {
      */
     hideUI() {
         this.handDisplay.style.opacity = 0
-        this.drawPile.style.cursor = "auto"
+        this.drawPile.style.cursor = "default"
         setTimeout(() => this.handDisplay.remove(), 500)
     }
 

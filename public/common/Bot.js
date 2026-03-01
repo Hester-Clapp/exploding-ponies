@@ -124,8 +124,8 @@ export class Bot extends GameClient {
             case "resolve":
                 clearTimeout(this.nopeTimeout)
                 this.configureCardPlayability(payload.coolingDown)
-                if (payload.coolingDown === true) {
-                    this.nopeTimeout = setTimeout(() => this.decideNope(this.nopeLolProbability), 1000 + 1500 * Math.random())
+                if (payload.coolingDown) {
+                    this.nopeTimeout = setTimeout(() => this.decideNope(this.nopeLolProbability), 1500 + 1000 * Math.random())
                 }
                 break
 
@@ -135,7 +135,7 @@ export class Bot extends GameClient {
 
             case "provideinput":
                 if (payload.target === this.uuid) {
-                    setTimeout(() => this.decideNope(this.nopeDefenceProbability), 1000 + 1500 * Math.random())
+                    setTimeout(() => this.decideNope(this.nopeDefenceProbability), 1500 + 1000 * Math.random())
                 }
                 break
 
@@ -319,7 +319,7 @@ export class Bot extends GameClient {
                 // If it gets here, it doesn't like any of its options but will draw anyway
                 this.drawCard()
             }
-        }, 1000 + 1500 * Math.random())
+        }, 1500 + 1000 * Math.random())
     }
 
     // Send message from bot to server
