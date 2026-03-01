@@ -18,8 +18,10 @@ export class RoomsController extends Controller {
     async afterLoad() {
         super.afterLoad()
 
+        this.container = document.getElementById("rooms");
+
         this.ws = new WebSocket(location.origin.replace(/^http/, "ws") + "/rooms")
-        this.ws.addEventListener("message", event => this.onMessage(event))
+        this.ws.addEventListener("message", event => this.onMessage(event), { signal: this.cleanup.signal })
         this.showRooms()
     }
 
@@ -36,20 +38,24 @@ export class RoomsController extends Controller {
                 for (const room of payload.rooms) {
                     this.rooms.set(room.roomId, room)
                 }
+                this.showRooms()
                 break
 
             case "create":
+            case "update":
             case "edit":
                 // payload = room
                 this.rooms.set(payload.roomId, payload)
+                this.patchRoom(payload)
                 break
 
             case "close":
                 // payload = room id
                 this.rooms.delete(payload)
+                this.deleteRoom(payload)
+                if (this.rooms.size === 0) this.noRooms.textContent = "No active rooms. Create one!";
                 break
         }
-        this.showRooms()
     }
 
     /**
@@ -58,8 +64,7 @@ export class RoomsController extends Controller {
     async showRooms() {
         await this.loaded
 
-        const container = document.getElementById("rooms");
-        container.innerHTML = "";
+        this.container.innerHTML = "";
 
         // Create Room
         const createDiv = document.createElement("div");
@@ -69,32 +74,64 @@ export class RoomsController extends Controller {
         createButton.textContent = "Create Room";
         createButton.addEventListener("click", this.createRoom.bind(this), { once: true });
         createDiv.appendChild(createButton);
-        container.appendChild(createDiv);
+
+        this.noRooms = document.createElement("p");
+        createDiv.appendChild(this.noRooms);
+
+        this.container.appendChild(createDiv);
 
         // Available rooms
         if (this.rooms.size === 0) {
-            const noRooms = document.createElement("p");
-            noRooms.textContent = "No active rooms. Create one!";
-            createDiv.appendChild(noRooms);
+            this.noRooms.textContent = "No active rooms. Create one!";
             return;
         }
 
         for (const room of this.rooms.values()) {
-            const div = document.createElement("div");
-            div.classList.add("room");
-
-            const title = document.createElement("h2");
-            title.textContent = `Room ${room.roomId} (${room.numPlayers}/${room.capacity})`;
-            div.appendChild(title);
-
-            const joinButton = document.createElement("button");
-            joinButton.textContent = "Join";
-            joinButton.disabled = room.numPlayers >= room.capacity;
-            joinButton.addEventListener("click", this.joinRoom.bind(this, room.roomId));
-            div.appendChild(joinButton);
-
-            container.appendChild(div);
+            this.container.appendChild(this.roomToHTML(room));
         }
+    }
+
+    async patchRoom(room) {
+        await this.loaded
+
+        const before = document.querySelector(`.room${room.roomId}`)
+        const after = this.roomToHTML(room)
+
+        if (before) {
+            before.innerHTML = after.innerHTML
+        } else {
+            this.container.appendChild(after);
+        }
+    }
+
+    async deleteRoom(roomId) {
+        await this.loaded
+
+        const div = document.querySelector(`.room${roomId}`)
+        if (div) div.remove()
+    }
+
+    roomToHTML(room) {
+        const { roomId, numPlayers, capacity, host } = room
+        const div = document.createElement("div");
+        div.classList.add("room");
+        div.classList.add(`room${roomId}`)
+
+        const title = document.createElement("h2");
+        title.textContent = `Room ${roomId} (${numPlayers}/${capacity})`;
+        div.appendChild(title);
+
+        const hostLabel = document.createElement("p");
+        hostLabel.textContent = `Host: ${host}`;
+        div.appendChild(hostLabel);
+
+        const joinButton = document.createElement("button");
+        joinButton.textContent = "Join";
+        joinButton.disabled = numPlayers >= capacity;
+        joinButton.addEventListener("click", this.joinRoom.bind(this, roomId));
+        div.appendChild(joinButton);
+
+        return div
     }
 
     /**

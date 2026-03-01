@@ -40,7 +40,7 @@ export class Hand {
         const cards = this.cards.get(cardType)
         if (cards.length === 1) {
             this.cards.delete(cardType)
-            return cards[0]
+            return cards[cards.length - 1]
         } else return cards.pop()
     }
 

@@ -6,7 +6,6 @@ export class UserHandler {
 
     add(username, avatar) {
         const uuid = crypto.randomUUID();
-        console.log(avatar)
         this.users.set(uuid, new User(uuid, username, avatar));
 
         return uuid;

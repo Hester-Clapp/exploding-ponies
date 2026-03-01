@@ -1,25 +1,24 @@
 <button id="start">Start Game!</button>
-<form>
-    <div>
-        <label for="capacity" title="The number of players in the game, including bots">Players:</label>
-        <input type="range" id="capacity" min="2" max="6" step="1" value="4"
-            oninput="this.nextElementSibling.value = this.value">
-        <output>4</output>
-    </div>
-    <div>
-        <label for="decks"
-            title="The number of decks of cards to use. 2 decks will make for a longer game">Decks:</label>
-        <input type="range" id="decks" min="1" max="2" step="1" value="1"
-            oninput="this.nextElementSibling.value = this.value">
-        <output>1</output>
-    </div>
-    <div>
-        <label for="cooldown"
-            title="The time interval (in seconds) between playing a card and its action being committed. Nope cards, defuse cards and stacks of pony cards must be played before this time runs out.">Card
-            Cooldown Time:</label>
-        <input type="range" id="cooldown" min="1" max="8" step="1" value="3"
-            oninput="this.nextElementSibling.value = this.value">
-        <output>3</output>
-    </div>
-    <input type="submit" value="Save">
-</form>
+<!-- <form> -->
+<div>
+    <label for="capacity" title="The number of players in the game, including bots">Players:</label>
+    <input type="range" id="capacity" min="2" max="6" step="1" value="4"
+        oninput="this.nextElementSibling.value = this.value">
+    <output>4</output>
+</div>
+<div>
+    <label for="decks" title="The number of decks of cards to use. 2 decks will make for a longer game">Decks:</label>
+    <input type="range" id="decks" min="1" max="2" step="1" value="1"
+        oninput="this.nextElementSibling.value = this.value">
+    <output>1</output>
+</div>
+<div>
+    <label for="cooldown"
+        title="The time interval (in seconds) between playing a card and its action being committed. Nope cards, defuse cards and stacks of pony cards must be played before this time runs out.">Card
+        Cooldown Time:</label>
+    <input type="range" id="cooldown" min="1" max="8" step="1" value="3"
+        oninput="this.nextElementSibling.value = this.value">
+    <output>3</output>
+</div>
+<!-- <input type="submit" value="Save"> -->
+<!-- </form> -->

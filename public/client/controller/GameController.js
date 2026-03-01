@@ -268,7 +268,6 @@ export class GameController extends Controller {
      * @returns true iff the card was able to be played
      */
     playCard(cardType) {
-        console.log("playCard")
         if (!this.gameClient.hand.has(cardType)) return false // Cannot play a card you don't have
 
         const card = this.gameClient.hand.get(cardType)

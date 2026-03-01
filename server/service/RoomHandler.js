@@ -18,6 +18,7 @@ export class RoomHandler {
         this.rooms.set(roomId, room);
 
         room.setCloseCallback(this.closeRoom.bind(this, room));
+        room.setUpdateCallback(() => this.publish("update", room.expose()));
 
         this.publish("create", room.expose())
         return roomId;

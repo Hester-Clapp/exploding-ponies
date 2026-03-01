@@ -114,11 +114,11 @@ export class RoomController extends Controller {
             return actual
         }
 
-        document.querySelector("form").addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const actual = await editRoom(this.roomId)
-            this.cooldown = actual.cooldown
-        });
+        // document.querySelector("form").addEventListener("submit", async (e) => {
+        //     e.preventDefault();
+        //     const actual = await editRoom(this.roomId)
+        //     this.cooldown = actual.cooldown
+        // });
 
         document.getElementById("start").addEventListener("click", async () => {
             const actual = await editRoom(this.roomId)

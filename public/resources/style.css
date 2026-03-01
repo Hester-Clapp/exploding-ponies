@@ -29,6 +29,10 @@
     border: 2px solid #000;
     padding: 0.5rem;
     margin-bottom: 0.5rem;
+
+    p {
+        margin-bottom: 0;
+    }
 }
 
 body {
@@ -36,7 +40,7 @@ body {
     padding: 1rem;
     background: lightblue;
     font-family: Verdana, Arial, sans-serif;
-    color: #333;
+    color: #3C0F62;
 }
 
 #app {
@@ -52,7 +56,7 @@ h3 {
 
 h1,
 #playStatus {
-    font-family: Celestia, Equestria, Veranda, Arial, sans-serif;
+    /* font-family: Celestia, Equestria, Veranda, Arial, sans-serif; */
     color: #3C0F62;
     text-shadow: 0.05em 0.05em white, 0.1em 0.1em #00B1CC;
 }
@@ -129,28 +133,37 @@ label.toggle {
     margin: 0.5rem;
     border-radius: 6px;
     border: 2px solid #999;
-    background: linear-gradient(to bottom, #fffae3, #ffd966);
+    background: linear-gradient(to bottom, #F6B7D2, #ED3C95);
     cursor: pointer;
     box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.2);
-    transition: all 0.1s ease-in-out;
+    transition: transform 0.1s ease-in-out, filter 0.1s ease-in-out;
     font-family: inherit;
+    color: white;
+    font-weight: 600;
+    text-shadow: 0.1em 0.1em #3B0E62;
 }
 
-button:hover,
+button:disabled {
+    cursor: initial;
+    filter: opacity(50%);
+}
+
+button:enabled:hover,
 input[type="submit"]:hover,
 label.toggle:hover {
-    background: linear-gradient(to bottom, #fff3b0, #ffcd3c);
+    filter: brightness(120%);
 }
 
-button:active,
+button:enabled:active,
 input[type="submit"]:active,
 label.toggle:active {
     transform: translateY(1px);
     box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+    color: #00B1CC;
 }
 
 #leave {
-    background: linear-gradient(to bottom, #ffcccc, #ff6666);
+    background: linear-gradient(to bottom, #90278E, #3B0E62);
 }
 
 label {
@@ -160,7 +173,6 @@ label {
 }
 
 label.toggle {
-    font-weight: initial;
     width: fit-content;
 }
 
