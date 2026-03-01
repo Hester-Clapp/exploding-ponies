@@ -1,4 +1,3 @@
-// import { serve } from "https://deno.land/std/http/server.ts";
 import { serveDir } from "https://deno.land/std/http/file_server.ts";
 import { UserHandler } from "./service/UserHandler.js";
 import { RoomHandler } from "./service/RoomHandler.js";

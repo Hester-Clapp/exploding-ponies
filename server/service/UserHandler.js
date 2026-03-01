@@ -6,6 +6,7 @@ export class UserHandler {
 
     add(username, avatar) {
         const uuid = crypto.randomUUID();
+        console.log(avatar)
         this.users.set(uuid, new User(uuid, username, avatar));
 
         return uuid;
@@ -39,11 +40,12 @@ export class User {
         this.uuid = uuid;
         this.username = username;
         if (avatar) {
-            const [coat, mane, eyes] = avatar.split(",")
+            const [coat, mane, eyes, style] = avatar.split(",")
             this.avatar = {
                 coat: Number(coat),
                 mane: Number(mane),
-                eyes: Number(eyes)
+                eyes: Number(eyes),
+                style: Number(style),
             }
         } else {
             this.avatar = {
