@@ -140,15 +140,15 @@ export class GameClient {
         return playableCards
     }
 
-    playCard(card) {
-        switch (card.cardType) {
+    playCard(cardType) {
+        switch (cardType) {
             case "cat1":
             case "cat2":
             case "cat3":
             case "cat4":
             case "cat5":
                 if (!this.lastTypePlayed) break // Do not request target for the first cat of your turn
-                if (this.lastTypePlayed !== card.cardType) break // Only ask for input after the second cat
+                if (this.lastTypePlayed !== cardType) break // Only ask for input after the second cat
             case "favor":
                 this.requestInput({ input: "target", players: this.players })
                 break
@@ -158,12 +158,12 @@ export class GameClient {
                 break
         }
 
-        this.send("playcard", card)
-        this.hand.take(card.cardType)
+        this.send("playcard", cardType)
+        this.hand.take(cardType)
 
-        this.lastTypePlayed = card.cardType
+        this.lastTypePlayed = cardType
         this.lastCardPlayer = this.uuid
-        if (card.cardType === "defuse") this.lastTypeDrawn = ""
+        if (cardType === "defuse") this.lastTypeDrawn = ""
     }
 
     provideInput(payload) {

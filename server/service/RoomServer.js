@@ -97,7 +97,7 @@ export class RoomServer {
                 this.gameServer?.setPlayerReady(sender)
                 break
             case "playcard":
-                this.gameServer?.playCard(payload.cardType, sender)
+                this.gameServer?.playCard(payload, sender)
                 break
             case "provideinput":
                 for (const input in payload) this.gameServer?.provideInput(input, payload[input])

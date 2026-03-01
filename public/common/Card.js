@@ -45,7 +45,7 @@ export class Card {
 }
 
 export class AttackCard extends Card {
-    color = "#EF5130"
+    color = "#E45803"
     instructions = "End your turn without drawing a card. \nForce the next player to take 2 turns."
 
     constructor(index) {
@@ -154,6 +154,22 @@ const names = {
     shuffle: "Shuffle",
     skip: "Skip"
 }
+
+export const cardTypes = [
+    "attack",
+    "cat1",
+    "cat2",
+    "cat3",
+    "cat4",
+    "cat5",
+    "defuse",
+    "exploding",
+    "favor",
+    "future",
+    "nope",
+    "shuffle",
+    "skip"
+]
 
 export const audibleCards = [
     "attack1",

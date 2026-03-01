@@ -188,7 +188,7 @@ export class Bot extends GameClient {
 
     playType(type) {
         if (this.canPlay(type)) {
-            super.playCard(this.hand.get(type))
+            super.playCard(type)
         }
     }
 

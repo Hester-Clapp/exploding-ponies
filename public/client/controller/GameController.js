@@ -1,14 +1,18 @@
 import { Controller } from './Controller.js';
 import { loadPage } from './pageLoader.js';
-import { audibleCards } from "../../common/Card.js"
+import { cardTypes, audibleCards } from "../../common/Card.js"
 import { Avatar } from '../service/Avatar.js';
 
 export class GameController extends Controller {
     constructor() {
         super()
 
-        this.audio = Object.fromEntries(audibleCards
-            .map(cardId => [cardId, new Audio(`resources/audio/${cardId}.mp3`)]))
+        this.audio = audibleCards.reduce((map, cardId) => {
+            const audio = new Audio(`resources/audio/${cardId}.mp3`)
+            audio.volume = 0.5
+            map.set(cardId, audio)
+            return map
+        }, new Map())
     }
 
     async beforeLoad(uuid, gameClient, cooldownTime) {
@@ -35,6 +39,14 @@ export class GameController extends Controller {
         document.getElementById("leave").addEventListener("click", () => this.leaveGame(), { once: true })
         this.drawPile.addEventListener("click", this.gameClient.drawCard.bind(this.gameClient), { signal: this.cleanup.signal })
 
+        const enableSoundEffects = document.getElementById("enableSoundEffects")
+        enableSoundEffects.addEventListener("click", () => {
+            const volume = enableSoundEffects.checked ? 0.5 : 0
+            for (const audio of this.audio.values()) {
+                audio.volume = volume
+            }
+        })
+
         this.addEventListener("newturn", this.onNewTurn)
         this.addEventListener("deal", this.renderHand)
         this.addEventListener("playcard", this.onPlayCard)
@@ -51,6 +63,10 @@ export class GameController extends Controller {
         this.addEventListener("eliminated", this.eliminateSelf)
         this.addEventListener("win", this.onWin)
         this.addEventListener("leave", this.leaveGame)
+        cardTypes.forEach(cardType => {
+            document.querySelector(`.${cardType}.cardGroup`)
+                .addEventListener("click", this.playCard.bind(this, cardType), { signal: this.cleanup.signal })
+        })
 
         this.gameClient.send("ready", null)
 
@@ -195,15 +211,15 @@ export class GameController extends Controller {
 
             window.addEventListener("enablecard", enableCard, { signal: this.cleanup.signal })
 
-            div.addEventListener("click", function clickCard() {
-                if (div.classList.contains("enabled")) {
-                    div.classList.remove("enabled")
-                    window.removeEventListener("enablecard", enableCard)
-                    div.removeEventListener("click", clickCard)
-                    this.playAudio(card, cardType === "nope" && this.gameClient.isMyTurn)
-                    this.playCard(card, div)
-                }
-            }.bind(this))
+            // div.addEventListener("click", function clickCard() {
+            //     if (div.classList.contains("enabled")) {
+            //         div.classList.remove("enabled")
+            //         window.removeEventListener("enablecard", enableCard)
+            //         div.removeEventListener("click", clickCard)
+            //         this.playAudio(card, cardType === "nope" && this.gameClient.isMyTurn)
+            //         this.playCard(card, div)
+            //     }
+            // }.bind(this))
         }
 
         return div
@@ -249,13 +265,25 @@ export class GameController extends Controller {
     /**
      * Triggered when this player plays a card
      * @param {Card} card The card they played
-     * @param {HTMLElement} element The element representing the card to be animated
+     * @returns true iff the card was able to be played
      */
-    playCard(card, element) {
+    playCard(cardType) {
+        console.log("playCard")
+        if (!this.gameClient.hand.has(cardType)) return false // Cannot play a card you don't have
+
+        const card = this.gameClient.hand.get(cardType)
+        const cardElement = document.querySelector(`.${cardType}.cardGroup`).lastElementChild
+
+        if (cardElement.classList.contains("disabled")) return false // Cannot play this card at this moment
+        cardElement.classList.remove("enabled")
+
+        this.gameClient.playCard(cardType)
+        this.playAudio(card, cardType === "nope" && this.gameClient.isMyTurn)
         this.setPlayStatus(`You played ${card.name}`)
-        this.gameClient.playCard(card)
-        this.animateDiscard(element)
+        this.animateDiscard(cardElement)
         this.animateCooldown()
+
+        return true
     }
 
     /**
@@ -304,6 +332,9 @@ export class GameController extends Controller {
 
                 element.addEventListener("click", (e) => {
                     e.stopPropagation()
+
+                    if (this.playCard(type)) return // Try playing the card, and halt if successful
+
                     document.querySelectorAll(`.cardGroup`).forEach(el => el.style.cursor = "auto")
 
                     controller.abort()
@@ -357,11 +388,11 @@ export class GameController extends Controller {
     playAudio(card, yup) {
         if (this.currentAudio) {
             this.currentAudio.pause()
-            if (this.currentAudio != this.audio[card.cardId]) {
+            if (this.currentAudio != this.audio.get(card.cardId)) {
                 this.currentAudio.currentTime = 0
             }
         }
-        this.currentAudio = yup ? this.audio["yup" + card.index] : this.audio[card.cardId]
+        this.currentAudio = yup ? this.audio.get("yup" + card.index) : this.audio.get(card.cardId)
         this.currentAudio.play()
     }
 
@@ -488,7 +519,7 @@ export class GameController extends Controller {
         }
 
         div.querySelector("button").addEventListener("click", remove, { once: true })
-        setTimeout(remove, this.cooldownTime * 2000)
+        setTimeout(remove, this.cooldownTime * 2500)
     }
 
     /**
