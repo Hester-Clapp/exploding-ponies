@@ -203,23 +203,16 @@ export class GameController extends Controller {
         div.appendChild(img)
 
         if (functional) {
+            div.classList.add("functional")
+
             function enableCard(event) {
                 const isEnabled = event.detail[card.cardType]
-                div.classList.toggle("enabled", isEnabled)
-                div.classList.toggle("disabled", !isEnabled)
+                const isFunctional = div.classList.contains("functional")
+                div.classList.toggle("enabled", isFunctional && isEnabled)
+                div.classList.toggle("disabled", isFunctional && !isEnabled)
             }
 
             window.addEventListener("enablecard", enableCard, { signal: this.cleanup.signal })
-
-            // div.addEventListener("click", function clickCard() {
-            //     if (div.classList.contains("enabled")) {
-            //         div.classList.remove("enabled")
-            //         window.removeEventListener("enablecard", enableCard)
-            //         div.removeEventListener("click", clickCard)
-            //         this.playAudio(card, cardType === "nope" && this.gameClient.isMyTurn)
-            //         this.playCard(card, div)
-            //     }
-            // }.bind(this))
         }
 
         return div
@@ -275,6 +268,7 @@ export class GameController extends Controller {
 
         if (cardElement.classList.contains("disabled")) return false // Cannot play this card at this moment
         cardElement.classList.remove("enabled")
+        cardElement.classList.remove("functional")
 
         this.gameClient.playCard(cardType)
         this.playAudio(card, cardType === "nope" && this.gameClient.isMyTurn)

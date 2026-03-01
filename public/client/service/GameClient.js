@@ -108,11 +108,15 @@ export class GameClient {
             && this.lastTypeDrawn !== "exploding"
             && this.lastTypePlayed !== "exploding"
 
-        const catPlayability = (catType) => (this.hand.has(catType, 2) // You can play if you have 2
-            || (coolingDown
-                && this.lastCardPlayer === this.uuid // Or if you just played one
-                && this.hand.has(catType) // and you have another one
-                && this.lastTypePlayed === catType)) // which is the same
+        const catPlayability = (catType) => (numTargetPlayers > 0 && // If there is someone you could target,
+            (this.hand.has(catType, 2) // You can play if you have 2
+                || (coolingDown
+                    && this.lastCardPlayer === this.uuid // Or if you just played one
+                    && this.hand.has(catType) // and you have another one
+                    && this.lastTypePlayed === catType))) // which is the same
+
+        const numTargetPlayers = Array.from(this.players.keys())
+            .map(uuid => uuid !== this.uuid && this.players.get(uuid).isAlive).length
 
         const nopePlayability = coolingDown // Only play nope during cooldown
             && this.lastTypePlayed !== "defuse" // Cannot "nope" defuse
