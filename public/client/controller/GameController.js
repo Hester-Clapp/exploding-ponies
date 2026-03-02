@@ -275,7 +275,8 @@ export class GameController extends Controller {
         this.playAudio(card, cardType === "nope" && this.gameClient.isMyTurn)
         this.setPlayStatus(`You played ${card.name}`)
         this.animateDiscard(cardElement)
-        this.animateCooldown()
+
+        document.body.style.cursor = "progress"
 
         return true
     }
@@ -366,7 +367,7 @@ export class GameController extends Controller {
 
     drawCard() {
         if (this.gameClient.isMyTurn) {
-            this.drawPile.style.cursor = "progress"
+            document.body.style.cursor = "progress"
             this.gameClient.drawCard()
         }
     }
@@ -419,6 +420,9 @@ export class GameController extends Controller {
      */
     onPlayCard(event) {
         const { card, uuid, yup } = event.detail
+        document.body.style.cursor = "auto"
+        this.animateCooldown()
+
         if (uuid === this.uuid) return
 
         this.setPlayStatus(`${this.gameClient.getUsername(uuid)} played ${card.name}`)
@@ -431,8 +435,6 @@ export class GameController extends Controller {
         hand.firstElementChild.remove()
         hand.appendChild(element)
         window.requestAnimationFrame(() => this.animateDiscard(element))
-
-        this.animateCooldown()
     }
 
     /**
@@ -474,7 +476,7 @@ export class GameController extends Controller {
      */
     onDrawCard(event) {
         const { card, uuid, handSize, length } = event.detail
-        this.drawPile.style.cursor = "pointer"
+        document.body.style.cursor = "auto"
         this.setDrawPileHeight(length)
 
         if (uuid === this.uuid) {
