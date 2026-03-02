@@ -511,7 +511,7 @@ export class GameController extends Controller {
     giveCard(event) {
         const { card, to } = event.detail
 
-        const element = document.querySelector(`.cardGroup.${card.cardType}`).firstElementChild
+        const element = document.querySelector(`.cardGroup.${card.cardType}`).lastElementChild
         const end = document.querySelector(`#otherPlayers .player${to} .hand`)
 
         window.requestAnimationFrame(() => {
