@@ -1,6 +1,6 @@
 import { Controller } from './Controller.js';
 import { loadPage } from './pageLoader.js';
-import { cardTypes, audibleCards } from "../../common/Card.js"
+import { cardToHTML, cardTypes, audibleCards } from "../../common/Card.js"
 import { Avatar } from '../service/Avatar.js';
 
 export class GameController extends Controller {
@@ -178,30 +178,7 @@ export class GameController extends Controller {
      * @returns The HTML element representing the card
      */
     cardToHTML(card = { cardId: "back", color: "#eee" }, functional = false) {
-        const { cardType, cardId, color, name, instructions } = card
-
-        const div = document.createElement("div")
-        div.classList.add("card")
-        div.title = instructions || `Play ${name} card`
-        div.style["border-color"] = color
-
-        if (cardType === "exploding") {
-            div.classList.add("exploding")
-        }
-
-        if (cardId === "back") {
-            div.classList.add("back")
-        } else {
-            const heading = document.createElement("h5")
-            heading.textContent = name
-            div.appendChild(heading)
-        }
-
-        const img = document.createElement("img")
-        img.src = `resources/images/${cardId}.png`
-        img.alt = name
-        if (!card.isCat) img.style.background = color
-        div.appendChild(img)
+        const div = cardToHTML(card)
 
         if (functional) {
             div.classList.add("functional")

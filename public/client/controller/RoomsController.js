@@ -19,6 +19,10 @@ export class RoomsController extends Controller {
         super.afterLoad()
 
         this.container = document.getElementById("rooms");
+        document.getElementById("leave").addEventListener("click", () => {
+            this.cleanup.abort()
+            loadPage("tutorial", this.uuid)
+        }, { signal: this.cleanup.signal })
 
         this.ws = new WebSocket(location.origin.replace(/^http/, "ws") + "/rooms")
         this.ws.addEventListener("message", event => this.onMessage(event), { signal: this.cleanup.signal })

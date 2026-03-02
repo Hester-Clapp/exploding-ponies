@@ -1,10 +1,12 @@
 import { HomeController } from "./HomeController.js";
+import { TutorialController } from "./TutorialController.js";
 import { RoomsController } from "./RoomsController.js";
 import { RoomController } from "./RoomController.js";
 import { GameController } from "./GameController.js";
 
 const controllers = {
     home: new HomeController(),
+    tutorial: new TutorialController(),
     rooms: new RoomsController(),
     room: new RoomController(),
     game: new GameController(),

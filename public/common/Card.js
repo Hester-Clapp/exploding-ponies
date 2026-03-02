@@ -130,6 +130,41 @@ export class SkipCard extends Card {
     }
 }
 
+/**
+ * Creates a HTML representation of a card
+ * @param {Card} card The card to represent - leave blank for a back card
+ * @param {boolean} functional Whether the card is functional - can it be clicked or interacted with
+ * @returns The HTML element representing the card
+ */
+export function cardToHTML(card = { cardId: "back", color: "#eee" }) {
+    const { cardType, cardId, color, name, instructions } = card
+
+    const div = document.createElement("div")
+    div.classList.add("card")
+    div.title = instructions || `Play ${name} card`
+    div.style["border-color"] = color
+
+    if (cardType === "exploding") {
+        div.classList.add("exploding")
+    }
+
+    if (cardId === "back") {
+        div.classList.add("back")
+    } else {
+        const heading = document.createElement("h5")
+        heading.textContent = name
+        div.appendChild(heading)
+    }
+
+    const img = document.createElement("img")
+    img.src = `resources/images/${cardId}.png`
+    img.alt = name
+    if (!card.isCat) img.style.background = color
+    div.appendChild(img)
+
+    return div
+}
+
 const names = {
     attack: "Attack",
     cat1: "Derpy Hooves",

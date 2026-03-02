@@ -23,6 +23,8 @@ export class Deck {
 
         hands.forEach(hand => hand.add(this.draw())) // Draw defuse cards
 
+        if (this.hands.length < 4) this.draw() // Remove one defuse if playing with 2 or 3 players (as per rules)
+
         this.shuffle()
         for (let i = 0; i < 7; i++) {
             hands.forEach(hand => hand.add(this.draw())) // Draw remaining cards

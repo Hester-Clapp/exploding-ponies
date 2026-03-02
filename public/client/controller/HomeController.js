@@ -36,6 +36,8 @@ export class HomeController extends Controller {
         fields.eyes.value = this.userData.avatar.eyes
         fields.style.value = this.userData.avatar.style
 
+        this.tutorial = !this.userData.saved
+
         const avatar = new Avatar(document.querySelector(".avatar"))
         avatar.setFeatures({
             coat: fields.coat.value,
@@ -68,7 +70,7 @@ export class HomeController extends Controller {
             this.userData = new UserData(getPonyName())
         }
         this.res = await fetch(`/play?${this.userData.toParams()}`, { method: "POST" }).then(res => res.json());
-        loadPage("rooms", this.res.uuid);
+        loadPage(this.tutorial ? "tutorial" : "rooms", this.res.uuid);
     }
 }
 

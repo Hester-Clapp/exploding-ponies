@@ -1,0 +1,107 @@
+<style>
+    section {
+        display: flex;
+        gap: 1rem;
+        margin: 2rem 0;
+
+        div.flexbox {
+            width: max-content;
+            flex-wrap: nowrap;
+        }
+
+        p {
+            margin: 0 1rem;
+            width: 100%;
+        }
+    }
+</style>
+
+<button>Skip</button>
+<section>
+    <div>
+        <p>
+            This game is based on the card game Exploding Kittens. Players take it in turns drawing cards until somepony
+            draws a villain card. When that happens, they are defeated and are out of the game. The aim is to be the
+            last player once everyone else has been defeated.
+        </p>
+        <p>
+            Every player starts with 8 cards, one of which is guaranteed to be an Element of Harmony. On your turn, you
+            can play as many cards as you want, or none at all. You end your turn by drawing a card from the draw pile.
+        </p>
+    </div>
+</section>
+<section>
+    <div class="exploding-defuse flexbox">
+    </div>
+    <div>
+        <p>
+            In there deck, there are enough villain cards to eliminate all but one of the players. If you draw a villain
+            card, you must play it immediately. If you don't stop it with an Element of Harmony card, you will be
+            defeated.
+        </p>
+        <p>
+            Elements of Harmony can be used to defeat villains. If you drew a villain card, play one of these on top,
+            then you can banish the villain back to the draw pile. You get to choose where in the draw pile you put it.
+        </p>
+    </div>
+</section>
+<section>
+    <div>
+        <p>
+            If another player does something you don't like, play a nope card on top to stop them. You can play these at
+            any time, even if it's not your turn. You can play a nope on top of another nope to cancel out its effect
+            and create a "yup". You cannot play a nope on a villain card or an Element of Harmony.
+        </p>
+    </div>
+    <div class="nope flexbox">
+    </div>
+</section>
+<section>
+    <div class="attack-skip flexbox"></div>
+    <div>
+        <p>
+            Playing an attack card will end your turn and also force the next player to take 2 turns. If you are
+            the victim of an attack, you can play another attack card to end both of your turns and make the next player
+            take 4 turns.
+        </p>
+        <p>
+            Playing a skip card will let you end your turn without drawing a card. If you are the victim of an attack, a
+            skip will only end one of your turns.
+        </p>
+    </div>
+</section>
+<section>
+    <div>
+        <p>
+            Play a see the future card to look at the top 3 cards of the draw pile.
+        </p>
+        <p>
+            If you see a villain card on top, you can play a shuffle card to shuffle the draw pile.
+        </p>
+    </div>
+    <div class="future-shuffle flexbox"></div>
+</section>
+<section>
+    <div class="favor flexbox"></div>
+    <div>
+        <p>
+            Favor cards let you ask another player to give you a card. After playing a favor card, click on the player
+            you want to ask - their name will turn blue.
+        </p>
+        <p>
+            If someone asks you for a favor, click on the card you want to give them. You can also play a nope card to
+            stop the action.
+        </p>
+    </div>
+</section>
+<section>
+    <div>
+        <p>
+            The remaining cards are pony cards, of which there are 5 different types. If you play two of the same pony
+            as a pair, you can steal a random card from another player. After playing two pony cards, click on the
+            player you want to steal from.
+        </p>
+    </div>
+    <div class="cat flexbox"></div>
+</section>
+<button>Play!</button>
