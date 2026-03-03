@@ -22,6 +22,9 @@ export class GameController extends Controller {
         this.gameClient = gameClient
         this.cooldownTime = cooldownTime
 
+        this.lock()
+        this.unlock()
+
         this.addEventListener("beforeunload", () => {
             this.gameClient.leaveGame()
             this.gameClient = null
@@ -233,18 +236,36 @@ export class GameController extends Controller {
 
     // Actions
 
+    lock() {
+        document.body.style.cursor = "progress"
+        this.unlocked = new Promise(resolve => {
+            document.body.style.cursor = "auto"
+            this.unlock = resolve
+        })
+    }
+
     /**
      * Triggered when this player plays a card
      * @param {Card} card The card they played
      * @returns true iff the card was able to be played
      */
-    playCard(cardType) {
-        if (!this.gameClient.hand.has(cardType)) return false // Cannot play a card you don't have
+    async playCard(cardType) {
+        await this.unlocked
+        this.lock()
+
+        if (!this.gameClient.hand.has(cardType)) {
+            this.unlock()
+            return false // Cannot play a card you don't have
+        }
 
         const card = this.gameClient.hand.get(cardType)
         const cardElement = document.querySelector(`.${cardType}.cardGroup`).lastElementChild
 
-        if (cardElement.classList.contains("disabled")) return false // Cannot play this card at this moment
+        if (cardElement.classList.contains("disabled")) {
+            this.unlock()
+            return false // Cannot play this card at this moment
+        }
+
         cardElement.classList.remove("enabled")
         cardElement.classList.remove("functional")
 
@@ -252,8 +273,6 @@ export class GameController extends Controller {
         this.playAudio(card, cardType === "nope" && this.gameClient.isMyTurn)
         this.setPlayStatus(`You played ${card.name}`)
         this.animateDiscard(cardElement)
-
-        document.body.style.cursor = "progress"
 
         return true
     }
@@ -293,7 +312,7 @@ export class GameController extends Controller {
      * @returns The type of card they want to give
      */
     async chooseCard(types) {
-        return new Promise(resolve => {
+        return new Promise((resolve, reject) => {
             const controller = new AbortController()
             this.setPlayStatus("Choose a card to give")
             this.handDisplay.classList.add("target")
@@ -305,12 +324,13 @@ export class GameController extends Controller {
                 element.addEventListener("click", (e) => {
                     e.stopPropagation()
 
-                    if (this.playCard(type)) return // Try playing the card, and halt if successful
-
                     document.querySelectorAll(`.cardGroup`).forEach(el => el.style.cursor = "auto")
-
                     controller.abort()
-                    resolve(type)
+
+                    this.playCard(type).then(result => {
+                        if (result) reject()
+                        else resolve(type)
+                    })
                 }, { signal: controller.signal, capture: true })
             })
         })
@@ -343,9 +363,11 @@ export class GameController extends Controller {
     }
 
     drawCard() {
-        if (this.gameClient.isMyTurn) {
-            document.body.style.cursor = "progress"
-            this.gameClient.drawCard()
+        if (this.gameClient.isMyTurn && this.gameClient.lastTypeDrawn !== "exploding") {
+            this.unlocked.then(() => {
+                this.lock()
+                this.gameClient.drawCard()
+            })
         }
     }
 
@@ -397,8 +419,8 @@ export class GameController extends Controller {
      */
     onPlayCard(event) {
         const { card, uuid, yup } = event.detail
-        document.body.style.cursor = "auto"
         this.animateCooldown()
+        this.unlock()
 
         if (uuid === this.uuid) return
 
@@ -428,6 +450,7 @@ export class GameController extends Controller {
             case "cardType":
                 this.chooseCard(types)
                     .then(cardType => this.gameClient.provideInput({ cardType }))
+                    .catch(() => { return }) // If the card choosing was aborted by playing a nope card, do nothing
                 break
             case "position":
                 this.choosePosition(length)
@@ -442,6 +465,8 @@ export class GameController extends Controller {
      */
     onProvideInput(event) {
         const { target, cardType } = event.detail
+        this.animateCooldown()
+        if (this.gameClient.isMyTurn) return
         if (cardType === "favor" && target === this.uuid) return; // Message is already handled
         this.setPlayStatus(`${this.gameClient.getUsername()} chose to target ${target === this.uuid ? "you!" : this.gameClient.getUsername(target)}`)
         document.querySelector(target === this.uuid ? "#hand" : `.player${target}`).classList.add("target")
@@ -465,6 +490,8 @@ export class GameController extends Controller {
         } else {
             this.addToPlayerHand(uuid, handSize)
         }
+
+        this.unlock()
     }
 
     /**

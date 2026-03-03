@@ -97,8 +97,9 @@ export class GameServer {
         const card = player.hand.take(cardType)
         this.gameCtx.deck.discard(card)
         this.cardHandler.enqueue(card)
-        if (this.resolveTimeoutId) clearTimeout(this.resolveTimeoutId)
-        this.resolveTimeoutId = setTimeout(() => this.resolveActions(), this.cooldown * 1000)
+
+        if (this.cooldownTimeout) clearTimeout(this.cooldownTimeout)
+        this.cooldownTimeout = setTimeout(() => this.resolveActions(), this.cooldown * 1000)
 
         this.publish("playcard", { card, uuid, coolingDown: true })
     }
@@ -113,6 +114,10 @@ export class GameServer {
                 const index = Math.floor(Math.random() * cards.length)
                 this.provideInput("cardType", cards[index].cardType)
             }
+
+            if (this.cooldownTimeout) clearTimeout(this.cooldownTimeout)
+            this.cooldownTimeout = setTimeout(() => this.resolveActions(), this.cooldown * 1000)
+
             this.publish("provideinput", { target: value, cardType: this.gameCtx.deck.lastTypePlayed })
         }
 

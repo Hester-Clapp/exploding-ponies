@@ -46,7 +46,7 @@ export class GameClient {
                 break
 
             case "provideinput":
-                if (!this.isMyTurn) this.dispatchEvent("provideinput", payload)
+                this.dispatchEvent("provideinput", payload)
                 break
 
             case "transfer":
