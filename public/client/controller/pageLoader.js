@@ -18,6 +18,7 @@ const app = document.getElementById("app")
 
 export async function loadPage(page, ...args) {
     try {
+        document.body.style.cursor = "wait"
         await controllers[page].beforeLoad(...args);
 
         const res = await fetch(`/resources/pages/${page}.html`);
@@ -26,6 +27,7 @@ export async function loadPage(page, ...args) {
         const html = await res.text();
         app.innerHTML = html;
 
+        document.body.style.cursor = "auto"
         await controllers[page].afterLoad()
     } catch (err) {
         console.error(err);

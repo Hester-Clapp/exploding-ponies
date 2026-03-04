@@ -98,13 +98,18 @@ export class RoomsController extends Controller {
     async patchRoom(room) {
         await this.loaded
 
-        const before = document.querySelector(`.room${room.roomId}`)
-        const after = this.roomToHTML(room)
+        const { roomId, numPlayers, capacity, host } = room
 
-        if (before) {
-            before.innerHTML = after.innerHTML
+        const element = document.querySelector(`.room${roomId}`)
+
+        if (element) {
+            const title = element.querySelector("h2");
+            title.textContent = `Room ${roomId} (${numPlayers}/${capacity})`;
+
+            const hostLabel = element.querySelector("p");
+            hostLabel.textContent = `Host: ${host}`;
         } else {
-            this.container.appendChild(after);
+            this.container.appendChild(this.roomToHTML(room));
         }
     }
 
