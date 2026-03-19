@@ -88,6 +88,16 @@ export class GameClient {
         }
     }
 
+    onClose(code) {
+        const players = Array.from(this.players.keys())
+            .map(uuid => {
+                const player = this.getPlayer(uuid)
+                return { uuid, username: player.username, handSize: player.handSize }
+            })
+
+        this.dispatchEvent("crash", { players: players.sort((a, b) => b.handSize - a.handSize) })
+    }
+
     initialiseHand(payload) {
         this.hand = new Hand(payload.hand)
         this.dispatchEvent("deal", { hand: this.hand.toObject(), length: payload.length })
@@ -182,6 +192,7 @@ export class GameClient {
 
     leaveGame() {
         this.send("end")
+        this.dispatchEvent("leave")
     }
 
     onDrawCard(card) {
@@ -202,7 +213,7 @@ export class GameClient {
     }
 
     getUsername(uuid = this.currentPlayerId) {
-        return this.getPlayer(uuid).username
+        return (uuid === this.uuid) ? "You" : this.getPlayer(uuid).username
     }
 
     get numLivingPlayers() {

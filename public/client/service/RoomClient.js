@@ -67,11 +67,15 @@ export class RoomClient {
         }
     }
 
-    onClose() {
-        // alert("Something went wrong. Apologies for the inconvenience")
-        // this.gameClient?.leaveGame()
-        // this.leaveRoom()
-        // window.location.reload()
+    onClose(event) {
+        const { code } = event
+
+        switch (code) {
+            case 1006:
+            case 1011:
+            case 1012:
+                this.gameClient.onClose(code)
+        }
     }
 
     initializePlayers(players) {

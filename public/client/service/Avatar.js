@@ -1,5 +1,5 @@
 export class Avatar {
-    constructor(container) {
+    constructor(container = document.createElement("div")) {
         this.container = container
         container.classList.add("avatar")
         container.innerHTML = ""

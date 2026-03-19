@@ -67,7 +67,7 @@
             padding: 0.25rem;
             background: #eee;
             border-radius: 0.25rem;
-            transition: opacity 0.25s;
+            transition: opacity 0.25s, filter 0.1s;
             opacity: 0;
 
             div {
@@ -176,6 +176,25 @@
         display: flex;
         gap: 1rem;
     }
+
+    #crash>div {
+        display: flex;
+        gap: 1rem;
+
+        h3 {
+            width: max-content;
+        }
+
+        button {
+            margin: 0;
+        }
+
+        img {
+            display: block;
+            width: 9rem;
+            height: 6rem;
+        }
+    }
 </style>
 
 <h1 id="turnStatus">Waiting for game to start...</h1>
@@ -213,7 +232,6 @@
     <div class="cat5 cardGroup"></div>
 </section>
 <div id="overlay" class="hidden">
-    <div id="obscure"></div>
     <div id="future" class="hidden">
         <h3>See The Future</h3>
         <ol></ol>
@@ -228,5 +246,26 @@
             <input type="range" min="0" step="1">
         </div>
         <button>Ok</button>
+    </div>
+    <div id="crash" class="hidden">
+        <div>
+            <div>
+                <h3>Nice work, Rainbow Crash!</h3>
+                <p>
+                    Unfortunately, the server has crashed or restarted, and all game progress has been lost. We are
+                    sorry
+                    for
+                    this inconvenience.
+                </p>
+                <button onclick="window.location.reload()">Reload page</button>
+            </div>
+            <img src="resources/images/crash.png">
+        </div>
+        <p>
+            If you have an idea as to why this happened, please submit a bug report on
+            <a href="https://github.com/Hester-Clapp/exploding-ponies/issues/new" target="_blank">Github.</a>
+        </p>
+        <p>As for the game, the winners by number of cards are:</p>
+        <ol></ol>
     </div>
 </div>

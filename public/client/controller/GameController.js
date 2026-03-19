@@ -38,8 +38,9 @@ export class GameController extends Controller {
         this.discardPile = document.getElementById("discardPile")
         this.cooldown = document.getElementById("cooldown")
         this.handDisplay = document.getElementById("hand")
+        this.overlay = document.getElementById("overlay")
 
-        document.getElementById("leave").addEventListener("click", () => this.leaveGame(), { once: true })
+        document.getElementById("leave").addEventListener("click", () => this.gameClient.leaveGame(), { once: true })
         this.drawPile.addEventListener("click", this.drawCard.bind(this), { signal: this.cleanup.signal })
 
         const enableSoundEffects = document.getElementById("enableSoundEffects")
@@ -65,11 +66,19 @@ export class GameController extends Controller {
         this.addEventListener("eliminate", this.eliminatePlayer)
         this.addEventListener("eliminated", this.eliminateSelf)
         this.addEventListener("win", this.onWin)
+        this.addEventListener("crash", this.onCrash)
         this.addEventListener("leave", this.leaveGame)
         cardTypes.forEach(cardType => {
             document.querySelector(`.${cardType}.cardGroup`)
                 .addEventListener("click", this.playCard.bind(this, cardType), { signal: this.cleanup.signal })
         })
+
+        this.avatars = this.gameClient.players.keys().reduce((map, uuid) => {
+            const avatar = new Avatar()
+            avatar.setFeatures(this.gameClient.getPlayer(uuid).avatar)
+            map.set(uuid, avatar.container)
+            return map
+        }, new Map())
 
         this.gameClient.send("ready", null)
 
@@ -103,7 +112,7 @@ export class GameController extends Controller {
             nameTag.textContent = player.username;
             flex.appendChild(nameTag)
 
-            const avatar = new Avatar(document.createElement("div"))
+            const avatar = new Avatar()
             avatar.setFeatures(player.avatar)
             flex.appendChild(avatar.container)
 
@@ -190,6 +199,7 @@ export class GameController extends Controller {
                 const isEnabled = event.detail[card.cardType]
                 const isFunctional = div.classList.contains("functional")
                 div.classList.toggle("enabled", isFunctional && isEnabled)
+                div.classList.toggle("bright-click", isFunctional && isEnabled)
                 div.classList.toggle("disabled", isFunctional && !isEnabled)
             }
 
@@ -221,8 +231,7 @@ export class GameController extends Controller {
      * @param {string} uuid The player who won
      */
     setWinStatus(uuid) {
-        const isMyTurn = uuid === this.uuid
-        const text = isMyTurn ? "You won!" : `${this.gameClient.getUsername(uuid)} won!`
+        const text = `${this.gameClient.getUsername(uuid)} won!`
         document.getElementById("turnStatus").textContent = text;
     }
 
@@ -290,11 +299,11 @@ export class GameController extends Controller {
             players.forEach(uuid => {
                 if (uuid === this.uuid || !this.gameClient.players.get(uuid).isAlive) return
                 const element = document.querySelector(`.player${uuid}`)
-                element.style.cursor = "pointer"
+                element.classList.add("bright-click")
 
                 element.addEventListener("click", () => {
-                    document.querySelectorAll(`#otherPlayers>div`).forEach(el => el.style.cursor = "auto")
-                    element.style.cursor = "auto"
+                    document.querySelectorAll(`#otherPlayers>div`).forEach(el => el.classList.remove("bright-click"))
+                    element.classList.remove("bright-click")
 
                     document.querySelector(`.player${uuid}`).classList.add("target")
                     this.setPlayStatus(`Waiting for ${this.gameClient.getUsername(uuid)} to choose a card...`)
@@ -319,12 +328,12 @@ export class GameController extends Controller {
 
             types.forEach(type => {
                 const element = document.querySelector(`.${type}.cardGroup`)
-                element.style.cursor = "pointer"
+                element.classList.add("bright-click")
 
                 element.addEventListener("click", (e) => {
                     e.stopPropagation()
 
-                    document.querySelectorAll(`.cardGroup`).forEach(el => el.style.cursor = "auto")
+                    document.querySelectorAll(`.cardGroup`).forEach(el => el.classList.remove("bright-click"))
                     controller.abort()
 
                     this.playCard(type).then(result => {
@@ -343,7 +352,6 @@ export class GameController extends Controller {
      */
     async choosePosition(length) {
         return new Promise(resolve => {
-            const overlay = document.getElementById("overlay")
             const div = document.getElementById("insert")
             const input = div.querySelector("input")
             input.max = length
@@ -351,11 +359,11 @@ export class GameController extends Controller {
 
             div.querySelector(".card").style["box-shadow"] = `0 ${length * 4}px 0 0.25rem #ddd`
 
-            overlay.classList.remove("hidden")
+            this.overlay.classList.remove("hidden")
             div.classList.remove("hidden")
 
             div.querySelector("button").addEventListener("click", () => {
-                overlay.classList.add("hidden")
+                this.overlay.classList.add("hidden")
                 div.classList.add("hidden")
                 resolve(Number(input.value))
             }, { once: true })
@@ -376,7 +384,6 @@ export class GameController extends Controller {
      */
     leaveGame() {
         this.cleanup.abort()
-        this.gameClient?.leaveGame()
         this.gameClient = null
         loadPage("rooms", this.uuid)
     }
@@ -410,7 +417,7 @@ export class GameController extends Controller {
             this.setTurnStatus(uuid)
             this.setPlayStatus("")
         }
-        this.drawPile.style.cursor = (uuid !== this.uuid) ? "default" : "pointer"
+        this.drawPile.classList.toggle("bright-click", uuid === this.uuid)
     }
 
     /**
@@ -509,7 +516,6 @@ export class GameController extends Controller {
      */
     showFuture(event) {
         const cards = event.detail
-        const overlay = document.getElementById("overlay")
         const div = document.getElementById("future")
         const ol = div.querySelector("ol")
         cards.forEach(card => {
@@ -518,11 +524,11 @@ export class GameController extends Controller {
             ol.appendChild(li)
         })
 
-        overlay.classList.remove("hidden")
+        this.overlay.classList.remove("hidden")
         div.classList.remove("hidden")
 
         function remove() {
-            overlay.classList.add("hidden")
+            this.overlay.classList.add("hidden")
             div.classList.add("hidden")
             ol.innerHTML = ""
         }
@@ -624,7 +630,34 @@ export class GameController extends Controller {
         this.setWinStatus(uuid)
         this.hideUI()
         setTimeout(() => this.setPlayStatus("Exiting to lobby..."), 3000)
-        setTimeout(() => this.leaveGame(), 5000)
+        setTimeout(() => this.gameClient.leaveGame(), 5000)
+    }
+
+    /**
+     * Shows a message explaining that the server has crashed
+     * Estimates who won the game based on hand size
+     * @param {Event} event Encapsulates the players who are winning
+     */
+    onCrash(event) {
+        const { players } = event.detail
+        this.overlay.classList.remove("hidden")
+        document.querySelector("#crash").classList.remove("hidden")
+        const ol = document.querySelector("#crash ol")
+        players.forEach(player => {
+            const avatar = this.avatars.get(player.uuid)
+            avatar.style.display = "inline-block"
+            avatar.style.width = "2rem"
+            avatar.style.height = "2rem"
+            avatar.style["min-width"] = "2rem"
+            avatar.style["min-height"] = "2rem"
+            avatar.style.margin = "0 0.5ch"
+
+            const li = document.createElement("li")
+            li.appendChild(document.createTextNode(player.username))
+            li.appendChild(avatar)
+            li.appendChild(document.createTextNode(` - ${player.handSize} cards`))
+            ol.appendChild(li)
+        })
     }
 
     // Animations

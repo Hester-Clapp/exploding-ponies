@@ -184,6 +184,15 @@ output {
     }
 }
 
+.bright-click {
+    transition: filter 0.1s;
+    cursor: pointer;
+}
+
+.bright-click:hover {
+    filter: brightness(1.1);
+}
+
 .card.disabled {
     filter: brightness(0.5);
 }
