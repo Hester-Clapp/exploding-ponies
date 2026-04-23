@@ -79,10 +79,14 @@ export class GameClient {
                 else this.dispatchEvent("eliminate", payload)
                 break
 
+            case "win":
+                this.dispatchEvent("enablecard", {})
+                this.dispatchEvent("win", payload)
+                break
+
             case "deck":
             case "shuffle":
             case "show":
-            case "win":
                 this.dispatchEvent(type, payload)
                 break
         }

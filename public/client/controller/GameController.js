@@ -41,7 +41,7 @@ export class GameController extends Controller {
         this.overlay = document.getElementById("overlay")
 
         document.getElementById("leave").addEventListener("click", () => this.gameClient.leaveGame(), { once: true })
-        this.drawPile.addEventListener("click", this.drawCard.bind(this), { signal: this.cleanup.signal })
+        this.drawPile.addEventListener("click", () => this.drawCard(), { signal: this.cleanup.signal })
 
         const enableSoundEffects = document.getElementById("enableSoundEffects")
         enableSoundEffects.addEventListener("click", () => {
@@ -70,7 +70,7 @@ export class GameController extends Controller {
         this.addEventListener("leave", this.leaveGame)
         cardTypes.forEach(cardType => {
             document.querySelector(`.${cardType}.cardGroup`)
-                .addEventListener("click", this.playCard.bind(this, cardType), { signal: this.cleanup.signal })
+                .addEventListener("click", () => this.playCard(cardType), { signal: this.cleanup.signal })
         })
 
         this.avatars = this.gameClient.players.keys().reduce((map, uuid) => {
@@ -196,14 +196,14 @@ export class GameController extends Controller {
             div.classList.add("functional")
 
             function enableCard(event) {
-                const isEnabled = event.detail[card.cardType]
+                const isEnabled = event.detail[card.cardType] || false
                 const isFunctional = div.classList.contains("functional")
                 div.classList.toggle("enabled", isFunctional && isEnabled)
                 div.classList.toggle("bright-click", isFunctional && isEnabled)
                 div.classList.toggle("disabled", isFunctional && !isEnabled)
             }
 
-            window.addEventListener("enablecard", enableCard, { signal: this.cleanup.signal })
+            this.addEventListener("enablecard", enableCard, false, this.cleanup.signal)
         }
 
         return div
@@ -518,23 +518,24 @@ export class GameController extends Controller {
         const cards = event.detail
         const div = document.getElementById("future")
         const ol = div.querySelector("ol")
+        const overlay = this.overlay
         cards.forEach(card => {
             const li = document.createElement("li")
             li.appendChild(this.cardToHTML(card))
             ol.appendChild(li)
         })
 
-        this.overlay.classList.remove("hidden")
+        overlay.classList.remove("hidden")
         div.classList.remove("hidden")
 
         function remove() {
-            this.overlay.classList.add("hidden")
+            overlay.classList.add("hidden")
             div.classList.add("hidden")
             ol.innerHTML = ""
         }
 
-        div.querySelector("button").addEventListener("click", remove, { once: true })
-        setTimeout(remove, this.cooldownTime * 2500)
+        div.querySelector("button").addEventListener("click", () => remove(), { once: true })
+        setTimeout(() => remove(), this.cooldownTime * 3000)
     }
 
     /**
@@ -628,7 +629,7 @@ export class GameController extends Controller {
     onWin(event) {
         const { uuid } = event.detail
         this.setWinStatus(uuid)
-        this.hideUI()
+        // this.hideUI()
         setTimeout(() => this.setPlayStatus("Exiting to lobby..."), 3000)
         setTimeout(() => this.gameClient.leaveGame(), 5000)
     }
