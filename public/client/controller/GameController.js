@@ -731,14 +731,14 @@ export class GameController extends Controller {
         this.cooldown.style.opacity = "1"
         bar.style.transition = "none"
         bar.style.width = "100%"
-        bar.style.background = "blue"
+        bar.style.background = "#3C0F62"
 
         window.requestAnimationFrame(() => {
             bar.offsetHeight // Force reflow
 
-            bar.style.transition = `width ${this.cooldownTime}s linear, background-color ${this.cooldownTime}s linear`
+            bar.style.transition = `width ${this.cooldownTime}s linear, background-color ${this.cooldownTime}s ease-in`
             bar.style.width = "0"
-            bar.style.background = "orange"
+            bar.style.background = "#F6B7D2"
 
             bar.addEventListener("transitionend", () => {
                 this.cooldown.style.opacity = "0"
