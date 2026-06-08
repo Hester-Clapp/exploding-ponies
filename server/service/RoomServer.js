@@ -164,7 +164,7 @@ export class RoomServer {
         for (let i = this.sockets.size; i < this.capacity; i++) {
             const username = getPonyName()
             const uuid = this.userHandler.add(username)
-            const bot = new Bot(uuid, username)
+            const bot = new Bot(uuid, username, 1.3 * Math.sqrt(this.cooldown))
 
             const socket = bot.socket
             this.bindSocketEventListeners(socket, false)
