@@ -39,13 +39,18 @@ async function handle(req) {
         const roomId = searchParams.get("roomId");
         const uuid = searchParams.get("uuid");
 
-        if (!roomId) return socket.close(1000, "Missing roomId");
-        if (!uuid) return socket.close(1000, "Missing uuid");
-        if (!userHandler.get(uuid)) return socket.close(1000, "Unknown uuid");
+        function reject(reason) {
+            socket.close(1000, reason)
+            return response
+        }
+
+        if (!roomId) return reject("Missing roomId");
+        if (!uuid) return reject("Missing uuid");
+        if (!userHandler.get(uuid)) return reject("Unknown uuid");
 
         const room = roomHandler.getRoom(roomId);
-        if (!room) return socket.close(1000, "Room not found");
-        if (room.isFull) return socket.close(1000, "Room is full");
+        if (!room) return reject("Room not found");
+        if (room.isFull) return reject("Room is full");
 
         room.openSocket(socket, uuid);
         return response;
